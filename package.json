@@ -1,0 +1,21 @@
+{
+  "name": "retail-pos",
+  "version": "1.0.0",
+  "description": "Production-grade Retail POS with Dynamic UPI QR Billing, Real-Time Inventory, and Financial Reports",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js",
+    "desktop": "cmd /c launch-desktop-app.bat",
+    "kiosk": "cmd /c launch-kiosk-app.bat",
+    "electron": "electron desktop/main.js"
+  },
+  "keywords": [
+    "pos",
+    "retail",
+    "upi",
+    "inventory",
+    "erpnext"
+  ],
+  "author": "Antigravity",
+  "license": "MIT"
+}

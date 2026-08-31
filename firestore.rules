@@ -1,0 +1,96 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions for data integrity & validation
+    function isValidInvoice(data) {
+      return data.keys().hasAll(['invoice_no', 'grand_total', 'payment_method', 'items'])
+        && data.invoice_no is string
+        && data.invoice_no.size() > 3
+        && data.invoice_no.size() <= 64
+        && (data.grand_total is int || data.grand_total is float)
+        && data.grand_total >= 0
+        && data.payment_method is string
+        && data.items is list
+        && data.items.size() > 0
+        && data.items.size() <= 200;
+    }
+
+    function isValidCustomer(data) {
+      return data.keys().hasAll(['id', 'name'])
+        && data.id is string
+        && data.name is string
+        && data.name.size() > 0
+        && data.name.size() <= 100;
+    }
+
+    function isValidInventoryItem(data) {
+      return data.keys().hasAll(['id', 'name', 'selling_price', 'stock_qty'])
+        && data.id is string
+        && data.name is string
+        && (data.selling_price is int || data.selling_price is float)
+        && (data.stock_qty is int || data.stock_qty is float);
+    }
+
+    function isValidShift(data) {
+      return data.keys().hasAll(['id', 'cashier', 'status'])
+        && data.id is string
+        && data.cashier is string
+        && data.status in ['OPEN', 'CLOSED'];
+    }
+
+    function isValidFcmToken(data) {
+      return data.keys().hasAll(['token'])
+        && data.token is string
+        && data.token.size() > 10
+        && data.token.size() <= 500;
+    }
+
+    // 1. Sales Invoices: Allow read, create, and update (for returns); NO deletion
+    match /invoices/{invoiceNo} {
+      allow read: if true;
+      allow create, update: if isValidInvoice(request.resource.data);
+      allow delete: if false; // Financial records must never be deleted
+    }
+
+    // 2. Customers & Members Khata: Allow read, create, update; NO deletion
+    match /customers/{customerId} {
+      allow read: if true;
+      allow create, update: if isValidCustomer(request.resource.data);
+      allow delete: if false;
+    }
+
+    // 3. Product Catalog & Inventory: Allow read, create, update; NO deletion
+    match /inventory/{itemId} {
+      allow read: if true;
+      allow create, update: if isValidInventoryItem(request.resource.data);
+      allow delete: if false;
+    }
+
+    // 4. Cashier Shifts & Register Audits: Allow read, create, update; NO deletion
+    match /shifts/{shiftId} {
+      allow read: if true;
+      allow create, update: if isValidShift(request.resource.data);
+      allow delete: if false;
+    }
+
+    // 5. Cloud Messaging Web Push Tokens
+    match /fcm_tokens/{tokenId} {
+      allow read: if true;
+      allow create, update: if isValidFcmToken(request.resource.data);
+      allow delete: if false;
+    }
+
+    // 6. Store Settings Profile
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Default Deny: Reject any access to unlisted paths or collections
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

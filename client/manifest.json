@@ -1,0 +1,42 @@
+{
+  "name": "Tioras Supermarket OS & Retail POS",
+  "short_name": "Tioras POS",
+  "description": "Production-grade Supermarket OS with Dynamic UPI QR Billing, Real-Time Inventory, and Financial Reports",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#0b0f19",
+  "theme_color": "#2563eb",
+  "categories": ["business", "finance", "productivity"],
+  "icons": [
+    {
+      "src": "app-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "POS Counter",
+      "url": "/#tab-pos",
+      "description": "Quick access to billing counter"
+    },
+    {
+      "name": "Invoices & Returns",
+      "url": "/#tab-invoices",
+      "description": "View sales history and process returns"
+    },
+    {
+      "name": "Inventory & Stock",
+      "url": "/#tab-inventory",
+      "description": "Inspect live stock and restock items"
+    }
+  ]
+}
