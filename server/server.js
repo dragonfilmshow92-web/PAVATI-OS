@@ -316,18 +316,48 @@ const server = http.createServer(async (req, res) => {
         if (body.direction === 'pull') {
           try {
             const erpItems = await client.fetchItems();
-            return sendJSON(res, 200, { success: true, count: erpItems.length, data: erpItems });
+            let importedCount = 0;
+            if (Array.isArray(erpItems)) {
+              for (const erpItm of erpItems) {
+                const existing = db.getItems().find(i => i.sku === erpItm.name || i.name === erpItm.item_name);
+                if (existing) {
+                  db.updateItem(existing.id, {
+                    selling_price: erpItm.standard_rate || existing.selling_price,
+                    cost_price: erpItm.valuation_rate || existing.cost_price,
+                    uom: erpItm.stock_uom || existing.uom
+                  });
+                  importedCount++;
+                } else {
+                  db.createItem({
+                    name: erpItm.item_name || erpItm.name,
+                    sku: erpItm.name,
+                    category: (erpItm.item_group || 'general').toLowerCase(),
+                    selling_price: erpItm.standard_rate || 0,
+                    cost_price: erpItm.valuation_rate || 0,
+                    uom: erpItm.stock_uom || 'Pcs',
+                    stock_qty: 10
+                  });
+                  importedCount++;
+                }
+              }
+            }
+            return sendJSON(res, 200, { success: true, count: erpItems.length, imported: importedCount, message: `Successfully pulled & synced ${importedCount} items from ERPNext!` });
           } catch (pullErr) {
-            return sendJSON(res, 400, { success: false, message: pullErr.message });
+            return sendJSON(res, 400, { success: false, message: pullErr.message || "Failed to pull catalog items from ERPNext" });
           }
         } else {
           const items = db.getItems();
           let pushedCount = 0;
+          let failedCount = 0;
           for (const item of items) {
-            await client.pushItem(item).catch(() => {});
-            pushedCount++;
+            try {
+              await client.pushItem(item);
+              pushedCount++;
+            } catch (err) {
+              failedCount++;
+            }
           }
-          return sendJSON(res, 200, { success: true, count: pushedCount });
+          return sendJSON(res, 200, { success: true, count: pushedCount, failed: failedCount, message: `Pushed ${pushedCount} items to ERPNext` });
         }
       }
 
@@ -337,11 +367,16 @@ const server = http.createServer(async (req, res) => {
         const client = new ERPNextClient({ ...settings.erpnext, ...body });
         const invoices = db.load().invoices || [];
         let pushedCount = 0;
+        let errors = [];
         for (const inv of invoices) {
-          await client.pushSalesInvoice(inv).catch(() => {});
-          pushedCount++;
+          try {
+            await client.pushSalesInvoice(inv);
+            pushedCount++;
+          } catch (invErr) {
+            errors.push({ invoice_no: inv.invoice_no, error: invErr.message });
+          }
         }
-        return sendJSON(res, 200, { success: true, count: pushedCount });
+        return sendJSON(res, 200, { success: true, count: pushedCount, errors: errors.length > 0 ? errors : undefined, message: `Pushed ${pushedCount} sales invoices to ERPNext` });
       }
 
       // 11. Staff Attendance

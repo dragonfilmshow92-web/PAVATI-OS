@@ -667,13 +667,21 @@
         const reason = prompt(`Enter return reason for ${firstItem.name}:`, "Customer return / size exchange");
         if (reason) {
           try {
-            await api.post(`/api/invoices/${encodeURIComponent(invNo)}/return`, {
+            const res = await api.post(`/api/invoices/${encodeURIComponent(invNo)}/return`, {
               item_id: firstItem.id,
               qty: 1,
               reason: reason
             });
             showToast(`Item returned. ${fmt.currency(firstItem.unit_price)} refunded and stock restored.`, 'success');
             await Promise.all([loadItems(), loadInvoices()]);
+
+            // Sync updated invoice & item to Firestore
+            if (window.FirebaseSync) {
+              const updatedInv = state.invoices.find(i => i.invoice_no === invNo);
+              if (updatedInv) window.FirebaseSync.syncInvoice(updatedInv);
+              const restoredItem = state.items.find(i => i.id === firstItem.id);
+              if (restoredItem) window.FirebaseSync.syncItem(restoredItem);
+            }
           } catch (err) {
             showToast(err.message, 'error');
           }
@@ -1583,14 +1591,18 @@
       if (elInvoices) elInvoices.textContent = d.invoices_count;
 
       // Update Below-Cost Margin Warning Banner
+      const lossBanner = document.getElementById('dashBelowCostBanner');
       const lossBadge = document.getElementById('dashLossCountBadge');
       const lossAmount = document.getElementById('dashLossAmount');
+      const lossDesc = document.getElementById('dashLossItemDesc');
       const modalLossAmount = document.getElementById('modalTotalLossAmount');
       const belowCostTable = document.getElementById('belowCostTableBody');
 
       if (d.below_cost_detection && d.below_cost_detection.detected_today) {
+        if (lossBanner) lossBanner.style.display = 'flex';
         if (lossBadge) lossBadge.textContent = `${d.below_cost_detection.count} Items`;
         if (lossAmount) lossAmount.textContent = fmt.currency(d.below_cost_detection.estimated_loss);
+        if (lossDesc) lossDesc.textContent = `${d.below_cost_detection.count} products sold below purchase cost`;
         if (modalLossAmount) modalLossAmount.textContent = fmt.currency(d.below_cost_detection.estimated_loss);
 
         if (belowCostTable && d.below_cost_detection.items) {
@@ -1606,6 +1618,9 @@
             </tr>
           `).join('');
         }
+      } else {
+        if (lossBanner) lossBanner.style.display = 'none';
+        if (belowCostTable) belowCostTable.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--accent-emerald);">No below-cost sales detected today. Healthy profit margins!</td></tr>`;
       }
 
       // Populate Live Invoices stream
@@ -2119,6 +2134,11 @@
         await loadCustomers();
         state.selectedCustomerId = res.data.id;
         renderCustomerDropdown();
+
+        // Real-time Firestore Cloud Sync
+        if (window.FirebaseSync && res.data) {
+          window.FirebaseSync.syncCustomer(res.data);
+        }
       } catch (err) {
         showToast(err.message, "error");
       }
@@ -2246,11 +2266,16 @@
         reorder_level: Number(dom.newProductForm.querySelector('#prodReorderLevel').value)
       };
       try {
-        await api.post('/api/items', payload);
+        const res = await api.post('/api/items', payload);
         showToast("Product added to supermarket catalog!", "success");
         closeModal(dom.modalNewProduct);
         dom.newProductForm.reset();
         await loadItems();
+
+        // Real-time Firestore Cloud Sync
+        if (window.FirebaseSync && res.data) {
+          window.FirebaseSync.syncItem(res.data);
+        }
       } catch (err) {
         showToast(err.message, "error");
       }
@@ -2267,11 +2292,16 @@
         notes: dom.modalRestock.querySelector('#restockNotes').value
       };
       try {
-        await api.post('/api/inventory/adjust', payload);
+        const res = await api.post('/api/inventory/adjust', payload);
         showToast("Delivery received & stock updated!", "success");
         closeModal(dom.modalRestock);
         dom.restockForm.reset();
         await loadItems();
+
+        // Real-time Firestore Cloud Sync
+        if (window.FirebaseSync && res.data) {
+          window.FirebaseSync.syncItem(res.data);
+        }
       } catch (err) {
         showToast(err.message, "error");
       }
@@ -2325,6 +2355,11 @@
           alert(`Shift Closed Successfully!\nExpected: ${fmt.currency(shift.expected_cash)}\nActual: ${fmt.currency(actualCash)}\nResult: ${msg}`);
           dom.closeShiftForm.reset();
           await loadActiveShift();
+
+          // Real-time Firestore Cloud Sync
+          if (window.FirebaseSync && shift) {
+            window.FirebaseSync.syncShift(shift);
+          }
         } catch (err) {
           showToast(err.message, "error");
         }
@@ -2556,11 +2591,16 @@
           uom: dom.editProdUom.value
         };
         try {
-          await api.put(`/api/items/${encodeURIComponent(id)}`, payload);
+          const res = await api.put(`/api/items/${encodeURIComponent(id)}`, payload);
           showToast(`Product "${payload.name}" updated successfully!`, 'success');
           closeModal(dom.modalEditProduct);
           await loadItems();
           loadDashboardStats();
+
+          // Real-time Firestore Cloud Sync
+          if (window.FirebaseSync && res.data) {
+            window.FirebaseSync.syncItem(res.data);
+          }
         } catch (err) {
           showToast(err.message, 'error');
         }
@@ -2598,10 +2638,15 @@
           credit_balance: Number(dom.editCustCredit.value) || 0
         };
         try {
-          await api.put(`/api/customers/${encodeURIComponent(id)}`, payload);
+          const res = await api.put(`/api/customers/${encodeURIComponent(id)}`, payload);
           showToast(`Customer member profile updated!`, 'success');
           closeModal(dom.modalEditCustomer);
           await loadCustomers();
+
+          // Real-time Firestore Cloud Sync
+          if (window.FirebaseSync && res.data) {
+            window.FirebaseSync.syncCustomer(res.data);
+          }
         } catch (err) {
           showToast(err.message, 'error');
         }
@@ -2629,10 +2674,15 @@
         const id = dom.walletCustId.value;
         const amount = Number(dom.walletRechargeAmount.value) || 0;
         try {
-          await api.post(`/api/customers/${encodeURIComponent(id)}/recharge`, { amount });
+          const res = await api.post(`/api/customers/${encodeURIComponent(id)}/recharge`, { amount });
           showToast(`Top-up of ₹${amount} applied to customer wallet!`, 'success');
           closeModal(dom.modalWalletRecharge);
           await loadCustomers();
+
+          // Real-time Firestore Cloud Sync
+          if (window.FirebaseSync && res.data) {
+            window.FirebaseSync.syncCustomer(res.data);
+          }
         } catch (err) {
           showToast(err.message, 'error');
         }
