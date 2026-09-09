@@ -1,5 +1,27 @@
-node_modules
-.desktop-data
+# Dependencies
+node_modules/
+frontend/node_modules/
+
+# Environment variables & secrets (CRITICAL - NEVER COMMIT)
+.env
+.env.*
+frontend/.env
+frontend/.env.*
+!.env.example
+
+
+# Build outputs
+client/assets/
+dist/
+build/
+
+# Logs & temp
 *.log
+npm-debug.log*
+yarn-debug.log*
+.desktop-data/
+scratch/
+
+# OS files
 .DS_Store
 Thumbs.db

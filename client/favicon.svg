@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#090d16" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+    <linearGradient id="cyanBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f2fe" />
+      <stop offset="50%" stop-color="#00c6ff" />
+      <stop offset="100%" stop-color="#0072ff" />
+    </linearGradient>
+    <linearGradient id="neonGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#818cf8" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="12" flood-color="#00d2ff" flood-opacity="0.45" />
+    </filter>
+  </defs>
+
+  <!-- Background Squircle -->
+  <rect x="16" y="16" width="480" height="480" rx="108" fill="url(#bgGrad)" stroke="#1e293b" stroke-width="6" />
+  
+  <!-- Subtle Neon Ring Accent -->
+  <rect x="26" y="26" width="460" height="460" rx="98" fill="none" stroke="url(#neonGlow)" stroke-width="3" stroke-opacity="0.3" />
+
+  <!-- Stylized Shopping Bag Handle above Monogram -->
+  <path d="M210 160 C210 105, 302 105, 302 160" fill="none" stroke="url(#cyanBlue)" stroke-width="22" stroke-linecap="round" filter="url(#glow)" />
+  <path d="M175 165 L337 165" stroke="url(#cyanBlue)" stroke-width="12" stroke-linecap="round" stroke-opacity="0.7" />
+
+  <!-- MCT Bold Monogram -->
+  <g filter="url(#glow)">
+    <!-- Letter M -->
+    <path d="M96 350 L96 200 L148 285 L200 200 L200 350" fill="none" stroke="url(#cyanBlue)" stroke-width="28" stroke-linecap="round" stroke-linejoin="round" />
+
+    <!-- Letter C with integrated POS Barcode bars -->
+    <path d="M305 220 C270 195, 225 210, 225 275 C225 340, 270 355, 305 330" fill="none" stroke="url(#cyanBlue)" stroke-width="28" stroke-linecap="round" />
+    
+    <!-- Mini Barcode inside C -->
+    <line x1="255" y1="250" x2="255" y2="300" stroke="#38bdf8" stroke-width="6" stroke-linecap="round" />
+    <line x1="267" y1="254" x2="267" y2="296" stroke="#38bdf8" stroke-width="4" stroke-linecap="round" />
+    <line x1="279" y1="250" x2="279" y2="300" stroke="#38bdf8" stroke-width="8" stroke-linecap="round" />
+    <line x1="292" y1="254" x2="292" y2="296" stroke="#38bdf8" stroke-width="5" stroke-linecap="round" />
+
+    <!-- Letter T -->
+    <path d="M320 200 L416 200 M368 200 L368 350" fill="none" stroke="url(#cyanBlue)" stroke-width="28" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+
+  <!-- Subtitle Pill: POINT OF SALE -->
+  <rect x="136" y="390" width="240" height="42" rx="21" fill="#0f172a" stroke="#00c6ff" stroke-width="2" stroke-opacity="0.6" />
+  <text x="256" y="417" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="20" font-weight="800" fill="#e0f2fe" letter-spacing="4" text-anchor="middle">POINT OF SALE</text>
+</svg>

@@ -1,20 +1,29 @@
 {
   "name": "retail-pos",
-  "version": "1.0.0",
-  "description": "Production-grade Retail POS with Dynamic UPI QR Billing, Real-Time Inventory, and Financial Reports",
+  "version": "2.0.0",
+  "description": "Production-grade Retail POS with MongoDB, Dynamic UPI QR Billing, Real-Time Inventory, and Financial Reports",
   "main": "server/server.js",
   "scripts": {
     "start": "node server/server.js",
+    "dev": "node server/server.js",
+    "build": "npm run build --prefix frontend",
     "desktop": "cmd /c launch-desktop-app.bat",
     "kiosk": "cmd /c launch-kiosk-app.bat",
     "electron": "electron desktop/main.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^16.4.5",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^8.5.0"
   },
   "keywords": [
     "pos",
     "retail",
     "upi",
     "inventory",
-    "erpnext"
+    "erpnext",
+    "mongodb"
   ],
   "author": "Antigravity",
   "license": "MIT"

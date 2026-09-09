@@ -1,10 +1,10 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-title Tioras Supermarket OS & Retail POS Launcher
+title MCT POS — Enterprise Retail POS Launcher
 
 echo ========================================================
-echo   Tioras Supermarket OS & Retail POS Desktop Suite
+echo   MCT POS — Enterprise Retail POS Desktop Suite
 echo ========================================================
 echo.
 echo [1] Launch Dedicated Standalone Desktop App (Recommended)
@@ -22,7 +22,7 @@ if "%choice%"=="1" (
 ) else (
     netstat -ano | findstr :3000 | findstr LISTENING >nul
     if %errorlevel% neq 0 (
-        start /min "Tioras POS Server" node "%~dp0server\server.js"
+        start /min "MCT POS Server" node "%~dp0server\server.js"
         timeout /t 2 /nobreak >nul
     )
     start "" "http://localhost:3000"

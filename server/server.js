@@ -1,12 +1,22 @@
+require('dotenv').config();
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const url = require('url');
-const db = require('./db');
+const db = require('./db-mongo');
 const ERPNextClient = require('./erpnext');
+
+// Prevent unexpected process exits on async/network errors
+process.on('uncaughtException', (err) => {
+  console.error('⚠️ Uncaught Exception in POS server:', err.message || err);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('⚠️ Unhandled Rejection in POS server:', reason?.message || reason);
+});
 
 const PORT = process.env.PORT || 3000;
 const CLIENT_DIR = path.join(__dirname, '..', 'client');
+const API_KEY = process.env.POS_API_KEY || '';
 
 // Helper to parse JSON body
 function parseBody(req) {
@@ -14,7 +24,7 @@ function parseBody(req) {
     let body = '';
     req.on('data', chunk => {
       body += chunk.toString();
-      if (body.length > 5e6) { // 5MB limit
+      if (body.length > 20e6) { // 20MB limit for high-res images/logos
         reject(new Error("Payload too large"));
       }
     });
@@ -36,7 +46,7 @@ function sendJSON(res, status, data) {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+    'Access-Control-Allow-Headers': '*'
   });
   res.end(JSON.stringify(data));
 }
@@ -63,7 +73,7 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(204, {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+      'Access-Control-Allow-Headers': '*'
     });
     return res.end();
   }
@@ -74,11 +84,12 @@ const server = http.createServer(async (req, res) => {
       // 1. Settings
       if (pathname === '/api/settings') {
         if (method === 'GET') {
-          return sendJSON(res, 200, { success: true, data: db.getSettings() });
+          const settings = await db.getSettings();
+          return sendJSON(res, 200, { success: true, data: settings });
         }
         if (method === 'POST') {
           const body = await parseBody(req);
-          const updated = db.updateSettings(body);
+          const updated = await db.updateSettings(body);
           return sendJSON(res, 200, { success: true, data: updated, message: "Settings saved successfully" });
         }
       }
@@ -91,7 +102,7 @@ const server = http.createServer(async (req, res) => {
       // 3. Items & Inventory
       if (pathname === '/api/items') {
         if (method === 'GET') {
-          const items = db.getItems({
+          const items = await db.getItems({
             category: parsedUrl.query.category,
             search: parsedUrl.query.search,
             stock_status: parsedUrl.query.stock_status
@@ -100,7 +111,7 @@ const server = http.createServer(async (req, res) => {
         }
         if (method === 'POST') {
           const body = await parseBody(req);
-          const newItem = db.createItem(body);
+          const newItem = await db.createItem(body);
           return sendJSON(res, 201, { success: true, data: newItem, message: "Product created successfully" });
         }
       }
@@ -108,7 +119,7 @@ const server = http.createServer(async (req, res) => {
       // Barcode lookup: /api/items/barcode/:code
       if (pathname.startsWith('/api/items/barcode/') && method === 'GET') {
         const barcode = decodeURIComponent(pathname.replace('/api/items/barcode/', ''));
-        const item = db.getItemByBarcode(barcode);
+        const item = await db.getItemByBarcode(barcode);
         if (!item) {
           return sendJSON(res, 404, { success: false, message: `No product found for barcode: ${barcode}` });
         }
@@ -119,13 +130,13 @@ const server = http.createServer(async (req, res) => {
       if (pathname.startsWith('/api/items/') && method === 'PUT') {
         const id = decodeURIComponent(pathname.replace('/api/items/', ''));
         const body = await parseBody(req);
-        const updated = db.updateItem(id, body);
+        const updated = await db.updateItem(id, body);
         return sendJSON(res, 200, { success: true, data: updated, message: "Product updated" });
       }
 
       if (pathname.startsWith('/api/items/') && method === 'DELETE') {
         const id = decodeURIComponent(pathname.replace('/api/items/', ''));
-        const removed = db.deleteItem(id);
+        const removed = await db.deleteItem(id);
         return sendJSON(res, 200, { success: true, data: removed, message: "Product deleted" });
       }
 
@@ -133,19 +144,19 @@ const server = http.createServer(async (req, res) => {
       if (pathname === '/api/inventory/adjust' && method === 'POST') {
         const body = await parseBody(req);
         const { item_id, delta_qty, reason, notes } = body;
-        const result = db.adjustStock(item_id, delta_qty, reason, notes);
+        const result = await db.adjustStock(item_id, delta_qty, reason, notes);
         return sendJSON(res, 200, { success: true, data: result, message: "Stock adjusted successfully" });
       }
 
       // 4. Customers
       if (pathname === '/api/customers') {
         if (method === 'GET') {
-          const customers = db.getCustomers();
+          const customers = await db.getCustomers();
           return sendJSON(res, 200, { success: true, data: customers });
         }
         if (method === 'POST') {
           const body = await parseBody(req);
-          const newCust = db.createCustomer(body);
+          const newCust = await db.createCustomer(body);
           return sendJSON(res, 201, { success: true, data: newCust, message: "Customer saved" });
         }
       }
@@ -153,43 +164,43 @@ const server = http.createServer(async (req, res) => {
       if (pathname.startsWith('/api/customers/') && method === 'PUT' && !pathname.endsWith('/recharge')) {
         const id = decodeURIComponent(pathname.replace('/api/customers/', ''));
         const body = await parseBody(req);
-        const updated = db.updateCustomer(id, body);
+        const updated = await db.updateCustomer(id, body);
         return sendJSON(res, 200, { success: true, data: updated, message: "Customer updated" });
       }
 
       if (pathname.startsWith('/api/customers/') && method === 'DELETE') {
         const id = decodeURIComponent(pathname.replace('/api/customers/', ''));
-        const removed = db.deleteCustomer(id);
+        const removed = await db.deleteCustomer(id);
         return sendJSON(res, 200, { success: true, data: removed, message: "Customer deleted" });
       }
 
       // 5. Cashier Shift Management
       if (pathname === '/api/shifts/active' && method === 'GET') {
-        const active = db.getActiveShift();
+        const active = await db.getActiveShift();
         return sendJSON(res, 200, { success: true, data: active });
       }
 
       if (pathname === '/api/shifts/open' && method === 'POST') {
         const body = await parseBody(req);
-        const shift = db.openShift(body.cashier, body.opening_cash, body.notes);
+        const shift = await db.openShift(body.cashier, body.opening_cash, body.notes);
         return sendJSON(res, 200, { success: true, data: shift, message: "New shift opened" });
       }
 
       if (pathname === '/api/shifts/close' && method === 'POST') {
         const body = await parseBody(req);
-        const shift = db.closeShift(body.closing_cash, body.notes);
+        const shift = await db.closeShift(body.closing_cash, body.notes);
         return sendJSON(res, 200, { success: true, data: shift, message: "Shift closed and reconciled" });
       }
 
       // 6. Checkout & Invoicing
       if (pathname === '/api/cart/checkout' && method === 'POST') {
         const body = await parseBody(req);
-        const invoice = db.createInvoice(body);
+        const invoice = await db.createInvoice(body);
         return sendJSON(res, 201, { success: true, data: invoice, message: "Sale completed successfully!" });
       }
 
       if (pathname === '/api/invoices' && method === 'GET') {
-        const invoices = db.getInvoices({
+        const invoices = await db.getInvoices({
           search: parsedUrl.query.search,
           payment_method: parsedUrl.query.payment_method,
           limit: parsedUrl.query.limit ? Number(parsedUrl.query.limit) : 100
@@ -200,30 +211,43 @@ const server = http.createServer(async (req, res) => {
       if (pathname.startsWith('/api/invoices/') && pathname.endsWith('/return') && method === 'POST') {
         const invoiceNo = decodeURIComponent(pathname.replace('/api/invoices/', '').replace('/return', ''));
         const body = await parseBody(req);
-        const result = db.processReturn(invoiceNo, body.item_id, body.qty, body.reason);
+        const result = await db.processReturn(invoiceNo, body.item_id, body.qty, body.reason);
         return sendJSON(res, 200, { success: true, data: result, message: "Item returned and stock restored" });
       }
 
       if (pathname.startsWith('/api/invoices/') && method === 'GET') {
         const invoiceNo = decodeURIComponent(pathname.replace('/api/invoices/', ''));
-        const inv = db.getInvoiceByNo(invoiceNo);
+        const inv = await db.getInvoiceByNo(invoiceNo);
         if (!inv) return sendJSON(res, 404, { success: false, message: "Invoice not found" });
         return sendJSON(res, 200, { success: true, data: inv });
       }
 
+      // Standalone Returns list & create
+      if (pathname === '/api/returns' && method === 'GET') {
+        const items = await db.getReturns();
+        return sendJSON(res, 200, { success: true, data: items });
+      }
+
+      if (pathname === '/api/returns' && method === 'POST') {
+        const body = await parseBody(req);
+        const result = await db.processReturn(body);
+        return sendJSON(res, 200, { success: true, data: result, message: "Return processed and stock restored" });
+      }
+
       // Promotions Endpoint
+
       if (pathname === '/api/promotions' && method === 'GET') {
-        return sendJSON(res, 200, { success: true, data: db.getPromotions() });
+        return sendJSON(res, 200, { success: true, data: await db.getPromotions() });
       }
 
       // Suppliers Endpoint
       if (pathname === '/api/suppliers') {
         if (method === 'GET') {
-          return sendJSON(res, 200, { success: true, data: db.getSuppliers() });
+          return sendJSON(res, 200, { success: true, data: await db.getSuppliers() });
         }
         if (method === 'POST') {
           const body = await parseBody(req);
-          const newSup = db.createSupplier(body);
+          const newSup = await db.createSupplier(body);
           return sendJSON(res, 201, { success: true, data: newSup, message: "Supplier created" });
         }
       }
@@ -231,23 +255,34 @@ const server = http.createServer(async (req, res) => {
       if (pathname.startsWith('/api/suppliers/') && method === 'PUT') {
         const id = decodeURIComponent(pathname.replace('/api/suppliers/', ''));
         const body = await parseBody(req);
-        const updated = db.updateSupplier(id, body);
+        const updated = await db.updateSupplier(id, body);
         return sendJSON(res, 200, { success: true, data: updated, message: "Supplier updated" });
       }
 
       if (pathname.startsWith('/api/suppliers/') && method === 'DELETE') {
         const id = decodeURIComponent(pathname.replace('/api/suppliers/', ''));
-        const removed = db.deleteSupplier(id);
+        const removed = await db.deleteSupplier(id);
         return sendJSON(res, 200, { success: true, data: removed, message: "Supplier deleted" });
+      }
+
+      // Goods Receiving (GRN) Endpoints
+      if (pathname === '/api/grn' && method === 'GET') {
+        return sendJSON(res, 200, { success: true, data: await db.getGRNRecords() });
+      }
+
+      if (pathname === '/api/grn/receive' && method === 'POST') {
+        const body = await parseBody(req);
+        const grnRecord = await db.createGRN(body);
+        return sendJSON(res, 201, { success: true, data: grnRecord, message: "Goods received and inventory updated successfully" });
       }
 
       // 7. Dynamic UPI QR Payload Generator
       if (pathname === '/api/upi/payload' && method === 'GET') {
-        const settings = db.getSettings();
+        const settings = await db.getSettings();
         const amount = parsedUrl.query.amount ? Number(parsedUrl.query.amount).toFixed(2) : "0.00";
         const invoiceNo = parsedUrl.query.invoice_no || "POS-" + Date.now().toString().slice(-6);
-        const upiId = settings.upi_id || "tioras@upi";
-        const merchantName = settings.upi_merchant_name || settings.store_name || "Tioras Fashion Studio";
+        const upiId = settings.upi_id || "mctpos@upi";
+        const merchantName = settings.upi_merchant_name || settings.store_name || "MCT POS";
 
         // Standard NPCI UPI URI Specification:
         // upi://pay?pa=<vpa>&pn=<merchant>&am=<amount>&cu=INR&tn=<note>
@@ -257,6 +292,7 @@ const server = http.createServer(async (req, res) => {
           success: true,
           data: {
             upi_string: upiString,
+            upi_uri: upiString,
             vpa: upiId,
             merchant_name: merchantName,
             amount: amount,
@@ -268,35 +304,88 @@ const server = http.createServer(async (req, res) => {
       // 8. Comprehensive Reports & Analytics
       if (pathname === '/api/reports' && method === 'GET') {
         const dateRange = parsedUrl.query.range || 'all';
-        const reports = db.getReports(dateRange);
+        const startDate = parsedUrl.query.start || parsedUrl.query.startDate;
+        const endDate = parsedUrl.query.end || parsedUrl.query.endDate;
+        const reports = await db.getReports(dateRange, startDate, endDate);
         return sendJSON(res, 200, { success: true, data: reports });
+      }
+
+      // 8a. 12-Card Executive Hub & Sub-Report Endpoints
+      if (pathname === '/api/reports/hub-stats' && method === 'GET') {
+        return sendJSON(res, 200, { success: true, data: await db.getHubStats() });
+      }
+      if (pathname === '/api/reports/today' && method === 'GET') {
+        return sendJSON(res, 200, { success: true, data: await db.getSalesTodaySummary() });
+      }
+      if (pathname === '/api/reports/vendor-gst' && method === 'GET') {
+        return sendJSON(res, 200, { success: true, data: await db.getVendorGSTReport() });
+      }
+      if (pathname === '/api/reports/all-branches' && method === 'GET') {
+        const dateRange = parsedUrl.query.range || 'month';
+        const start = parsedUrl.query.start || parsedUrl.query.startDate;
+        const end = parsedUrl.query.end || parsedUrl.query.endDate;
+        return sendJSON(res, 200, { success: true, data: await db.getAllBranchSales(dateRange, start, end) });
+      }
+      if (pathname === '/api/reports/customer-analysis' && method === 'GET') {
+        return sendJSON(res, 200, { success: true, data: await db.getCustomerAnalysis() });
+      }
+      if (pathname === '/api/reports/product-activity' && method === 'GET') {
+        const dateRange = parsedUrl.query.range || 'month';
+        const start = parsedUrl.query.start || parsedUrl.query.startDate;
+        const end = parsedUrl.query.end || parsedUrl.query.endDate;
+        return sendJSON(res, 200, { success: true, data: await db.getProductActivity(dateRange, start, end) });
+      }
+      if (pathname === '/api/reports/backup-invoices' && method === 'GET') {
+        const q = parsedUrl.query.q || parsedUrl.query.query || '';
+        return sendJSON(res, 200, { success: true, data: await db.getBackupInvoices(q) });
+      }
+      if (pathname === '/api/reports/service-reminders' && method === 'GET') {
+        return sendJSON(res, 200, { success: true, data: await db.getServiceReminders() });
+      }
+      if (pathname === '/api/reports/service-reminders' && method === 'POST') {
+        const body = await parseBody(req);
+        const reminder = await db.createServiceReminder(body);
+        return sendJSON(res, 201, { success: true, data: reminder, message: 'Service reminder scheduled' });
+      }
+      const srvMatch = pathname.match(/^\/api\/reports\/service-reminders\/([^/]+)$/);
+      if (srvMatch && method === 'PUT') {
+        const body = await parseBody(req);
+        const updated = await db.updateServiceReminder(srvMatch[1], body);
+        return sendJSON(res, 200, { success: true, data: updated, message: 'Reminder updated' });
+      }
+      if (srvMatch && method === 'DELETE') {
+        const deleted = await db.deleteServiceReminder(srvMatch[1]);
+        return sendJSON(res, 200, { success: true, data: deleted, message: 'Reminder removed' });
       }
 
       // 9. Executive Dashboard Stats (maxtoapp reference)
       if (pathname === '/api/dashboard/stats' && method === 'GET') {
-        const stats = db.getDashboardStats();
+        const stats = await db.getDashboardStats();
         return sendJSON(res, 200, { success: true, data: stats });
       }
 
       // 10. Expenses Management
       if (pathname === '/api/expenses' && method === 'GET') {
-        const expenses = db.getExpenses();
+        const expenses = await db.getExpenses();
         return sendJSON(res, 200, { success: true, data: expenses });
       }
       if (pathname === '/api/expenses' && method === 'POST') {
         const body = await parseBody(req);
-        const newExpense = db.addExpense(body);
+        const newExpense = await db.addExpense(body);
         return sendJSON(res, 201, { success: true, data: newExpense });
       }
       if (pathname.startsWith('/api/expenses/') && method === 'PUT') {
         const id = decodeURIComponent(pathname.replace('/api/expenses/', ''));
+        if (!id) {
+          return sendJSON(res, 400, { success: false, message: 'Expense ID is required' });
+        }
         const body = await parseBody(req);
-        const updated = db.updateExpense(id, body);
+        const updated = await db.updateExpense(id, body);
         return sendJSON(res, 200, { success: true, data: updated, message: "Expense updated" });
       }
       if (pathname.startsWith('/api/expenses/') && method === 'DELETE') {
         const id = decodeURIComponent(pathname.replace('/api/expenses/', ''));
-        const removed = db.deleteExpense(id);
+        const removed = await db.deleteExpense(id);
         return sendJSON(res, 200, { success: true, data: removed, message: "Expense deleted" });
       }
 
@@ -381,24 +470,24 @@ const server = http.createServer(async (req, res) => {
 
       // 11. Staff Attendance
       if (pathname === '/api/attendance' && method === 'GET') {
-        const attendance = db.getAttendance();
+        const attendance = await db.getAttendance();
         return sendJSON(res, 200, { success: true, data: attendance });
       }
       if (pathname === '/api/attendance' && method === 'POST') {
         const body = await parseBody(req);
-        const record = db.recordAttendance(body);
+        const record = await db.recordAttendance(body);
         return sendJSON(res, 201, { success: true, data: record });
       }
 
       // 12. Online & Store Pickup Orders
       if (pathname === '/api/orders' && method === 'GET') {
-        const orders = db.getOrders();
+        const orders = await db.getOrders();
         return sendJSON(res, 200, { success: true, data: orders });
       }
       const orderStatusMatch = pathname.match(/^\/api\/orders\/([^/]+)\/status$/);
       if (orderStatusMatch && method === 'POST') {
         const body = await parseBody(req);
-        const updatedOrder = db.updateOrderStatus(orderStatusMatch[1], body.status);
+        const updatedOrder = await db.updateOrderStatus(orderStatusMatch[1], body.status);
         return sendJSON(res, 200, { success: true, data: updatedOrder });
       }
 
@@ -406,12 +495,88 @@ const server = http.createServer(async (req, res) => {
       const walletMatch = pathname.match(/^\/api\/customers\/([^/]+)\/recharge$/);
       if (walletMatch && method === 'POST') {
         const body = await parseBody(req);
-        const updatedCust = db.rechargeWallet(walletMatch[1], body.amount);
+        const updatedCust = await db.rechargeWallet(walletMatch[1], body.amount);
         return sendJSON(res, 200, { success: true, data: updatedCust });
+      }
+
+      // 14. Sales Returns & Credit Notes
+      if (pathname === '/api/returns' && method === 'GET') {
+        return sendJSON(res, 200, { success: true, data: await db.getReturns() });
+      }
+      if (pathname === '/api/returns' && method === 'POST') {
+        const body = await parseBody(req);
+        const ret = await db.processReturn(body);
+        return sendJSON(res, 201, { success: true, data: ret, message: 'Return processed & credit note generated' });
+      }
+
+      // 15. Purchase Orders (PO)
+      if (pathname === '/api/purchase-orders' && method === 'GET') {
+        return sendJSON(res, 200, { success: true, data: await db.getPurchaseOrders() });
+      }
+      if (pathname === '/api/purchase-orders' && method === 'POST') {
+        const body = await parseBody(req);
+        const po = await db.createPurchaseOrder(body);
+        return sendJSON(res, 201, { success: true, data: po, message: 'Purchase Order created' });
+      }
+      const poStatusMatch = pathname.match(/^\/api\/purchase-orders\/([^/]+)\/status$/);
+      if (poStatusMatch && method === 'PUT') {
+        const body = await parseBody(req);
+        const updated = await db.updatePurchaseOrderStatus(poStatusMatch[1], body.status);
+        return sendJSON(res, 200, { success: true, data: updated });
+      }
+
+      // 16. Coupons & Promotions Engine
+      if (pathname === '/api/coupons' && method === 'GET') {
+        return sendJSON(res, 200, { success: true, data: await db.getCoupons() });
+      }
+      if (pathname === '/api/coupons' && method === 'POST') {
+        const body = await parseBody(req);
+        const coupon = await db.createCoupon(body);
+        return sendJSON(res, 201, { success: true, data: coupon, message: 'Coupon created' });
+      }
+      if (pathname === '/api/coupons/validate' && method === 'POST') {
+        const body = await parseBody(req);
+        const result = await db.validateCoupon(body.code, Number(body.cart_total) || 0);
+        return sendJSON(res, 200, { success: true, data: result, message: `Coupon applied! You save ₹${result.discount_amount}` });
+      }
+      const couponIdMatch = pathname.match(/^\/api\/coupons\/([^/]+)$/);
+      if (couponIdMatch && method === 'PUT') {
+        const body = await parseBody(req);
+        const updated = await db.toggleCoupon(couponIdMatch[1], body.active);
+        return sendJSON(res, 200, { success: true, data: updated });
+      }
+      if (couponIdMatch && method === 'DELETE') {
+        const removed = await db.deleteCoupon(couponIdMatch[1]);
+        return sendJSON(res, 200, { success: true, data: removed, message: 'Coupon deleted' });
+      }
+
+      // 17. Sales Chart Analytics
+      if (pathname === '/api/analytics/charts' && method === 'GET') {
+        return sendJSON(res, 200, { success: true, data: await db.getSalesChartData() });
+      }
+
+      // 18. Customer Purchase History
+      const custHistMatch = pathname.match(/^\/api\/customers\/([^/]+)\/history$/);
+      if (custHistMatch && method === 'GET') {
+        const history = await db.getCustomerHistory(custHistMatch[1]);
+        return sendJSON(res, 200, { success: true, data: history });
+      }
+
+      // 19. Data Backup
+      if (pathname === '/api/backup/download' && method === 'GET') {
+        const backupData = await db.getBackupData();
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
+        res.writeHead(200, {
+          'Content-Type': 'application/json',
+          'Content-Disposition': `attachment; filename="mct-pos-backup-${timestamp}.json"`,
+          'Access-Control-Allow-Origin': '*'
+        });
+        return res.end(JSON.stringify(backupData, null, 2));
       }
 
       // Unknown API endpoint
       return sendJSON(res, 404, { success: false, message: "Endpoint not found" });
+
 
     } catch (apiErr) {
       console.error("API error:", apiErr);
@@ -420,6 +585,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   // --- STATIC FILE SERVER ---
+  const isAssetRequest = pathname.startsWith('/assets/') || (path.extname(pathname) !== '' && pathname !== '/');
   let filePath = path.join(CLIENT_DIR, pathname === '/' ? 'index.html' : pathname);
 
   // Security: prevent directory traversal
@@ -430,7 +596,12 @@ const server = http.createServer(async (req, res) => {
 
   fs.stat(filePath, (err, stats) => {
     if (err || !stats.isFile()) {
-      // Fallback to index.html for SPA behavior
+      // Missing assets (.css, .js, .png, etc.) must return 404, never fallback to index.html
+      if (isAssetRequest && pathname !== '/favicon.ico') {
+        res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+        return res.end("404 Not Found");
+      }
+      // Fallback to index.html ONLY for client SPA navigation routes (e.g. /barcode, /pos)
       filePath = path.join(CLIENT_DIR, 'index.html');
     }
 
@@ -442,7 +613,10 @@ const server = http.createServer(async (req, res) => {
         res.writeHead(500);
         return res.end("Error loading static asset");
       }
-      res.writeHead(200, { 'Content-Type': contentType });
+      res.writeHead(200, {
+        'Content-Type': contentType,
+        'Cache-Control': ext === '.html' ? 'no-cache, no-store, must-revalidate' : 'public, max-age=3600'
+      });
       res.end(content);
     });
   });
@@ -452,13 +626,19 @@ module.exports = server;
 
 // Only listen directly when running as a standalone script (local dev / desktop app)
 if (require.main === module) {
+  // 1. Immediately start listening on PORT so UI static assets & health checks are available instantly
   server.listen(PORT, () => {
     console.log(`=======================================================`);
     console.log(`🚀 Retail POS & UPI Billing System running!`);
     console.log(`📍 Web Dashboard & Touch Counter: http://localhost:${PORT}`);
-    console.log(`📦 Real-time Inventory & Reports active`);
+    console.log(`📦 Real-time Inventory & Reports active (MongoDB)`);
     console.log(`💳 Dynamic UPI Engine: enabled`);
     console.log(`=======================================================`);
+  });
+
+  // 2. Connect to MongoDB asynchronously in background with auto-retry
+  db.connectDB().catch(err => {
+    console.error('Initial MongoDB connection notice (retrying in background):', err.message);
   });
 }
 

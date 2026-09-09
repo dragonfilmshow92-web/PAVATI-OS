@@ -6,12 +6,15 @@
     "phone": "+91 98765 43210",
     "email": "contact@tiorasfashion.com",
     "gstin": "27AABCT1234F1Z5",
-    "upi_id": "tioras@upi",
-    "upi_merchant_name": "Tioras Retail Studio",
+    "upi_id": "7795208996-3@ybl",
+    "upi_merchant_name": "PRASHANT HIREMATH",
     "currency_symbol": "₹",
     "receipt_header": "GST INVOICE / CASH MEMO",
     "receipt_footer": "Thank you for visiting Tioras Fashion Studio!\nExchange within 7 days with original bill.\nFollow us on Instagram: @tioras_studio",
-    "default_tax_rate": 12
+    "default_tax_rate": 12,
+    "store_tagline": "wear your imagination",
+    "store_address": "Talikoti",
+    "store_phone": "9902857694"
   },
   "categories": [
     {
@@ -50,663 +53,320 @@
       "icon": "🧴"
     }
   ],
-  "items": [
-    {
-      "id": "ITEM-001",
-      "sku": "TS-SHIRT-01",
-      "barcode": "890100100001",
-      "name": "Classic Oxford Cotton Shirt",
-      "category": "shirts",
-      "size": "L",
-      "color": "Sky Blue",
-      "cost_price": 650,
-      "selling_price": 1299,
-      "gst_rate": 12,
-      "hsn_code": "6205",
-      "stock_qty": 64,
-      "reorder_level": 5,
-      "uom": "Pcs",
-      "image": "👔"
-    },
-    {
-      "id": "ITEM-002",
-      "sku": "TS-SHIRT-02",
-      "barcode": "890100100002",
-      "name": "Classic Oxford Cotton Shirt",
-      "category": "shirts",
-      "size": "M",
-      "color": "Sky Blue",
-      "cost_price": 650,
-      "selling_price": 1299,
-      "gst_rate": 12,
-      "hsn_code": "6205",
-      "stock_qty": 17,
-      "reorder_level": 5,
-      "uom": "Pcs",
-      "image": "👔"
-    },
-    {
-      "id": "ITEM-003",
-      "sku": "TS-SHIRT-03",
-      "barcode": "890100100003",
-      "name": "Formal Crisp Twill Shirt",
-      "category": "shirts",
-      "size": "XL",
-      "color": "White",
-      "cost_price": 700,
-      "selling_price": 1499,
-      "gst_rate": 12,
-      "hsn_code": "6205",
-      "stock_qty": 13,
-      "reorder_level": 5,
-      "uom": "Pcs",
-      "image": "👔"
-    },
-    {
-      "id": "ITEM-004",
-      "sku": "TS-TROU-01",
-      "barcode": "890100100004",
-      "name": "Slim Fit Stretch Chinos",
-      "category": "trousers",
-      "size": "32",
-      "color": "Khaki",
-      "cost_price": 800,
-      "selling_price": 1599,
-      "gst_rate": 12,
-      "hsn_code": "6203",
-      "stock_qty": 14,
-      "reorder_level": 4,
-      "uom": "Pcs",
-      "image": "👖"
-    },
-    {
-      "id": "ITEM-005",
-      "sku": "TS-TROU-02",
-      "barcode": "890100100005",
-      "name": "Slim Fit Stretch Chinos",
-      "category": "trousers",
-      "size": "34",
-      "color": "Navy Blue",
-      "cost_price": 800,
-      "selling_price": 1599,
-      "gst_rate": 12,
-      "hsn_code": "6203",
-      "stock_qty": 20,
-      "reorder_level": 4,
-      "uom": "Pcs",
-      "image": "👖"
-    },
-    {
-      "id": "ITEM-006",
-      "sku": "TS-JEAN-01",
-      "barcode": "890100100006",
-      "name": "Raw Denim Selvedge Jeans",
-      "category": "trousers",
-      "size": "32",
-      "color": "Dark Indigo",
-      "cost_price": 950,
-      "selling_price": 1899,
-      "gst_rate": 12,
-      "hsn_code": "6203",
-      "stock_qty": 8,
-      "reorder_level": 5,
-      "uom": "Pcs",
-      "image": "👖"
-    },
-    {
-      "id": "ITEM-007",
-      "sku": "TS-KURTI-01",
-      "barcode": "890100100007",
-      "name": "Anarkali Embroidered Kurti",
-      "category": "dresses",
-      "size": "M",
-      "color": "Maroon / Gold",
-      "cost_price": 1100,
-      "selling_price": 2499,
-      "gst_rate": 12,
-      "hsn_code": "6204",
-      "stock_qty": 12,
-      "reorder_level": 3,
-      "uom": "Pcs",
-      "image": "👗"
-    },
-    {
-      "id": "ITEM-008",
-      "sku": "TS-DRESS-02",
-      "barcode": "890100100008",
-      "name": "Floral Summer Flare Dress",
-      "category": "dresses",
-      "size": "L",
-      "color": "Pastel Pink",
-      "cost_price": 750,
-      "selling_price": 1699,
-      "gst_rate": 12,
-      "hsn_code": "6204",
-      "stock_qty": 15,
-      "reorder_level": 4,
-      "uom": "Pcs",
-      "image": "👗"
-    },
-    {
-      "id": "ITEM-009",
-      "sku": "TS-SAREE-01",
-      "barcode": "890100100009",
-      "name": "Pure Chanderi Silk Saree",
-      "category": "dresses",
-      "size": "Free",
-      "color": "Emerald Green",
-      "cost_price": 1800,
-      "selling_price": 3999,
-      "gst_rate": 5,
-      "hsn_code": "5007",
-      "stock_qty": 6,
-      "reorder_level": 2,
-      "uom": "Pcs",
-      "image": "🥻"
-    },
-    {
-      "id": "ITEM-010",
-      "sku": "TS-FAB-01",
-      "barcode": "890100100010",
-      "name": "Pure Belgian Linen 60 Lea",
-      "category": "fabrics",
-      "size": "Standard",
-      "color": "Natural Beige",
-      "cost_price": 320,
-      "selling_price": 550,
-      "gst_rate": 5,
-      "hsn_code": "5309",
-      "stock_qty": 48,
-      "reorder_level": 10,
-      "uom": "Meter",
-      "image": "🧵"
-    },
-    {
-      "id": "ITEM-011",
-      "sku": "TS-FAB-02",
-      "barcode": "890100100011",
-      "name": "Handblock Indigo Cotton Fabric",
-      "category": "fabrics",
-      "size": "Standard",
-      "color": "Indigo Floral",
-      "cost_price": 180,
-      "selling_price": 350,
-      "gst_rate": 5,
-      "hsn_code": "5208",
-      "stock_qty": 65,
-      "reorder_level": 15,
-      "uom": "Meter",
-      "image": "🧵"
-    },
-    {
-      "id": "ITEM-012",
-      "sku": "TS-ACC-01",
-      "barcode": "890100100012",
-      "name": "Full Grain Leather Belt",
-      "category": "accessories",
-      "size": "Adjustable",
-      "color": "Deep Brown",
-      "cost_price": 350,
-      "selling_price": 799,
-      "gst_rate": 18,
-      "hsn_code": "4203",
-      "stock_qty": 22,
-      "reorder_level": 5,
-      "uom": "Pcs",
-      "image": "💼"
-    },
-    {
-      "id": "ITEM-013",
-      "sku": "TS-ACC-02",
-      "barcode": "890100100013",
-      "name": "Silk Pocket Squares (Set of 3)",
-      "category": "accessories",
-      "size": "Pack of 3",
-      "color": "Assorted",
-      "cost_price": 220,
-      "selling_price": 499,
-      "gst_rate": 18,
-      "hsn_code": "6213",
-      "stock_qty": 3,
-      "reorder_level": 5,
-      "uom": "Pack",
-      "image": "✨"
-    },
-    {
-      "id": "ITEM-014",
-      "sku": "TS-DAILY-01",
-      "barcode": "890100100014",
-      "name": "Organic Fabric Care Spray 250ml",
-      "category": "daily",
-      "size": "250ml",
-      "color": "French Lavender",
-      "cost_price": 140,
-      "selling_price": 299,
-      "gst_rate": 18,
-      "hsn_code": "3307",
-      "stock_qty": 30,
-      "reorder_level": 6,
-      "uom": "Bottle",
-      "image": "🧴"
-    },
-    {
-      "id": "ITEM-015",
-      "sku": "TS-DAILY-02",
-      "barcode": "890100100015",
-      "name": "Cedar Wood Moth Repellent Rings",
-      "category": "daily",
-      "size": "Pack of 10",
-      "color": "Natural Wood",
-      "cost_price": 110,
-      "selling_price": 249,
-      "gst_rate": 18,
-      "hsn_code": "4421",
-      "stock_qty": 0,
-      "reorder_level": 5,
-      "uom": "Pack",
-      "image": "🪵"
-    },
-    {
-      "id": "ITEM-016",
-      "sku": "SKU-186405",
-      "barcode": "34567",
-      "name": "sdfgh",
-      "category": "shirts",
-      "size": "ertt55",
-      "color": "77hgh",
-      "cost_price": 6666,
-      "selling_price": 7777,
-      "gst_rate": 12,
-      "hsn_code": "6205",
-      "stock_qty": 20,
-      "reorder_level": 5,
-      "uom": "Pcs",
-      "image": "🏷️"
-    }
-  ],
+  "items": [],
   "customers": [
     {
       "id": "CUST-00",
       "name": "Walk-in Retail Customer",
       "phone": "9999999999",
-      "email": "",
-      "loyalty_points": 56,
-      "credit_balance": 0,
-      "total_spent": 5696
-    },
-    {
-      "id": "CUST-01",
-      "name": "Rahul Sharma",
-      "phone": "9820011223",
-      "email": "rahul.sharma@example.com",
-      "loyalty_points": 150,
-      "credit_balance": 0,
-      "total_spent": 4200
-    },
-    {
-      "id": "CUST-02",
-      "name": "Priya Patel",
-      "phone": "9830022334",
-      "email": "priya.patel@example.com",
-      "loyalty_points": 280,
-      "credit_balance": 0,
-      "total_spent": 7850
-    },
-    {
-      "id": "CUST-03",
-      "name": "Anita Desai",
-      "phone": "9840033445",
-      "email": "anita.desai@example.com",
-      "loyalty_points": 90,
-      "credit_balance": 0,
-      "total_spent": 2400
-    },
-    {
-      "id": "CUST-05",
-      "name": "Test Customer",
-      "phone": "9876543210",
-      "email": "",
-      "loyalty_points": 100,
-      "credit_balance": 0,
-      "total_spent": 10392
+      "loyalty_points": 0,
+      "wallet_balance": 0,
+      "total_purchases": 0,
+      "visit_count": 0
     }
   ],
-  "invoices": [
-    {
-      "invoice_no": "INV-20260831-0007",
-      "created_at": "2026-08-31T09:11:31.251Z",
-      "cashier": "Administrator",
-      "customer": {
-        "id": "CUST-05",
-        "name": "Test Customer",
-        "phone": "9876543210"
-      },
-      "items": [
-        {
-          "id": "ITEM-001",
-          "sku": "TS-SHIRT-01",
-          "name": "Classic Oxford Cotton Shirt",
-          "category": "shirts",
-          "size": "L",
-          "color": "Sky Blue",
-          "hsn_code": "6205",
-          "cost_price": 650,
-          "unit_price": 1299,
-          "qty": 2,
-          "line_subtotal": 2319.64,
-          "gst_rate": 12,
-          "gst_amount": 278.36,
-          "line_total": 2598
-        }
-      ],
-      "subtotal": 2319.64,
-      "discount_total": 0,
-      "cgst_total": 139.18,
-      "sgst_total": 139.18,
-      "total_tax": 278.36,
-      "round_off": 0,
-      "grand_total": 2598,
-      "payment_method": "UPI",
-      "payment_details": {
-        "upi_ref": "UPI/987654321123"
-      },
-      "shift_id": "SHIFT-165623"
-    },
-    {
-      "invoice_no": "INV-20260831-0006",
-      "created_at": "2026-08-31T09:04:38.948Z",
-      "cashier": "Administrator",
-      "customer": {
-        "id": "CUST-05",
-        "name": "Test Customer",
-        "phone": "9876543210"
-      },
-      "items": [
-        {
-          "id": "ITEM-001",
-          "sku": "TS-SHIRT-01",
-          "name": "Classic Oxford Cotton Shirt",
-          "category": "shirts",
-          "size": "L",
-          "color": "Sky Blue",
-          "hsn_code": "6205",
-          "cost_price": 650,
-          "unit_price": 1299,
-          "qty": 2,
-          "line_subtotal": 2319.64,
-          "gst_rate": 12,
-          "gst_amount": 278.36,
-          "line_total": 2598
-        }
-      ],
-      "subtotal": 2319.64,
-      "discount_total": 0,
-      "cgst_total": 139.18,
-      "sgst_total": 139.18,
-      "total_tax": 278.36,
-      "round_off": 0,
-      "grand_total": 2598,
-      "payment_method": "UPI",
-      "payment_details": {
-        "upi_ref": "UPI/987654321123"
-      },
-      "shift_id": "SHIFT-165623"
-    },
-    {
-      "invoice_no": "INV-20260830-0005",
-      "created_at": "2026-08-30T10:44:18.259Z",
-      "cashier": "Administrator",
-      "customer": {
-        "id": "CUST-05",
-        "name": "Test Customer",
-        "phone": "9876543210"
-      },
-      "items": [
-        {
-          "id": "ITEM-001",
-          "sku": "TS-SHIRT-01",
-          "name": "Classic Oxford Cotton Shirt",
-          "category": "shirts",
-          "size": "L",
-          "color": "Sky Blue",
-          "hsn_code": "6205",
-          "cost_price": 650,
-          "unit_price": 1299,
-          "qty": 2,
-          "line_subtotal": 2319.64,
-          "gst_rate": 12,
-          "gst_amount": 278.36,
-          "line_total": 2598
-        }
-      ],
-      "subtotal": 2319.64,
-      "discount_total": 0,
-      "cgst_total": 139.18,
-      "sgst_total": 139.18,
-      "total_tax": 278.36,
-      "round_off": 0,
-      "grand_total": 2598,
-      "payment_method": "UPI",
-      "payment_details": {
-        "upi_ref": "UPI/987654321123"
-      },
-      "shift_id": "SHIFT-165623"
-    },
-    {
-      "invoice_no": "INV-20260830-0004",
-      "created_at": "2026-08-30T10:36:24.789Z",
-      "cashier": "Administrator",
-      "customer": {
-        "id": "CUST-00",
-        "name": "Walk-in Retail Customer",
-        "phone": "9999999999"
-      },
-      "items": [
-        {
-          "id": "ITEM-001",
-          "sku": "TS-SHIRT-01",
-          "name": "Classic Oxford Cotton Shirt",
-          "category": "shirts",
-          "size": "L",
-          "color": "Sky Blue",
-          "hsn_code": "6205",
-          "cost_price": 650,
-          "unit_price": 1299,
-          "qty": 1,
-          "line_subtotal": 1159.82,
-          "gst_rate": 12,
-          "gst_amount": 139.18,
-          "line_total": 1299
-        },
-        {
-          "id": "ITEM-002",
-          "sku": "TS-SHIRT-02",
-          "name": "Classic Oxford Cotton Shirt",
-          "category": "shirts",
-          "size": "M",
-          "color": "Sky Blue",
-          "hsn_code": "6205",
-          "cost_price": 650,
-          "unit_price": 1299,
-          "qty": 1,
-          "line_subtotal": 1159.82,
-          "gst_rate": 12,
-          "gst_amount": 139.18,
-          "line_total": 1299
-        },
-        {
-          "id": "ITEM-003",
-          "sku": "TS-SHIRT-03",
-          "name": "Formal Crisp Twill Shirt",
-          "category": "shirts",
-          "size": "XL",
-          "color": "White",
-          "hsn_code": "6205",
-          "cost_price": 700,
-          "unit_price": 1499,
-          "qty": 1,
-          "line_subtotal": 1338.39,
-          "gst_rate": 12,
-          "gst_amount": 160.61,
-          "line_total": 1499
-        },
-        {
-          "id": "ITEM-004",
-          "sku": "TS-TROU-01",
-          "name": "Slim Fit Stretch Chinos",
-          "category": "trousers",
-          "size": "32",
-          "color": "Khaki",
-          "hsn_code": "6203",
-          "cost_price": 800,
-          "unit_price": 1599,
-          "qty": 1,
-          "line_subtotal": 1427.68,
-          "gst_rate": 12,
-          "gst_amount": 171.32,
-          "line_total": 1599
-        }
-      ],
-      "subtotal": 5085.71,
-      "discount_total": 0,
-      "cgst_total": 305.14,
-      "sgst_total": 305.14,
-      "total_tax": 610.29,
-      "round_off": 0,
-      "grand_total": 5696,
-      "payment_method": "Cash",
-      "payment_details": {
-        "cash_tendered": 5696,
-        "change_due": 0
-      },
-      "shift_id": "SHIFT-165623"
-    },
-    {
-      "invoice_no": "INV-20260830-0003",
-      "created_at": "2026-08-30T10:33:02.904Z",
-      "cashier": "Administrator",
-      "customer": {
-        "id": "CUST-05",
-        "name": "Test Customer",
-        "phone": "9876543210"
-      },
-      "items": [
-        {
-          "id": "ITEM-001",
-          "sku": "TS-SHIRT-01",
-          "name": "Classic Oxford Cotton Shirt",
-          "category": "shirts",
-          "size": "L",
-          "color": "Sky Blue",
-          "hsn_code": "6205",
-          "cost_price": 650,
-          "unit_price": 1299,
-          "qty": 2,
-          "line_subtotal": 2319.64,
-          "gst_rate": 12,
-          "gst_amount": 278.36,
-          "line_total": 2598
-        }
-      ],
-      "subtotal": 2319.64,
-      "discount_total": 0,
-      "cgst_total": 139.18,
-      "sgst_total": 139.18,
-      "total_tax": 278.36,
-      "round_off": 0,
-      "grand_total": 2598,
-      "payment_method": "UPI",
-      "payment_details": {
-        "upi_ref": "UPI/987654321123"
-      },
-      "shift_id": "SHIFT-001"
-    },
-    {
-      "invoice_no": "INV-20260830-0001",
-      "created_at": "2026-08-30T08:30:15.516Z",
-      "cashier": "Administrator",
-      "customer": {
-        "id": "CUST-01",
-        "name": "Rahul Sharma",
-        "phone": "9820011223"
-      },
-      "items": [
-        {
-          "id": "ITEM-001",
-          "sku": "TS-SHIRT-01",
-          "name": "Classic Oxford Cotton Shirt",
-          "category": "shirts",
-          "size": "L",
-          "color": "Sky Blue",
-          "hsn_code": "6205",
-          "cost_price": 650,
-          "unit_price": 1299,
-          "qty": 1,
-          "discount_percent": 0,
-          "line_subtotal": 1159.82,
-          "gst_rate": 12,
-          "gst_amount": 139.18,
-          "line_total": 1299
-        }
-      ],
-      "subtotal": 1159.82,
-      "discount_total": 0,
-      "cgst_total": 69.59,
-      "sgst_total": 69.59,
-      "total_tax": 139.18,
-      "round_off": 0,
-      "grand_total": 1299,
-      "payment_method": "UPI",
-      "payment_details": {
-        "upi_ref": "UPI/329482910482",
-        "upi_vpa": "tioras@upi"
-      },
-      "shift_id": "SHIFT-001"
-    },
-    {
-      "invoice_no": "INV-20260830-0002",
-      "created_at": "2026-08-30T09:30:15.516Z",
-      "cashier": "Administrator",
-      "customer": {
-        "id": "CUST-02",
-        "name": "Priya Patel",
-        "phone": "9830022334"
-      },
-      "items": [
-        {
-          "id": "ITEM-004",
-          "sku": "TS-TROU-01",
-          "name": "Slim Fit Stretch Chinos",
-          "category": "trousers",
-          "size": "32",
-          "color": "Khaki",
-          "hsn_code": "6203",
-          "cost_price": 800,
-          "unit_price": 1599,
-          "qty": 1,
-          "discount_percent": 0,
-          "line_subtotal": 1427.68,
-          "gst_rate": 12,
-          "gst_amount": 171.32,
-          "line_total": 1599
-        }
-      ],
-      "subtotal": 1427.68,
-      "discount_total": 0,
-      "cgst_total": 85.66,
-      "sgst_total": 85.66,
-      "total_tax": 171.32,
-      "round_off": 0,
-      "grand_total": 1599,
-      "payment_method": "Cash",
-      "payment_details": {
-        "cash_tendered": 2000,
-        "change_due": 401
-      },
-      "shift_id": "SHIFT-001"
-    }
-  ],
+  "invoices": [],
   "stock_ledger": [
+    {
+      "entry_id": "LEDGER-1788192734377-452",
+      "timestamp": "2026-08-31T16:12:14.377Z",
+      "item_id": "ITEM-002",
+      "item_name": "Classic Oxford Cotton Shirt",
+      "qty_change": 10,
+      "qty_after": 36,
+      "reason": "Goods Receiving (GRN: GRN-20260831-006)",
+      "reference_no": "INV-28647"
+    },
+    {
+      "entry_id": "LEDGER-1788192724527-937",
+      "timestamp": "2026-08-31T16:12:04.527Z",
+      "item_id": "ITEM-002",
+      "item_name": "Classic Oxford Cotton Shirt",
+      "qty_change": 10,
+      "qty_after": 26,
+      "reason": "Goods Receiving (GRN: GRN-20260831-005)",
+      "reference_no": "INV-22220"
+    },
+    {
+      "entry_id": "LEDGER-1788192427728-ITEM-014",
+      "timestamp": "2026-08-31T16:07:07.727Z",
+      "item_id": "ITEM-014",
+      "item_name": "Organic Fabric Care Spray 250ml",
+      "qty_change": -1,
+      "qty_after": 29,
+      "reason": "Sales Checkout",
+      "reference_no": "INV-20260831-0017"
+    },
+    {
+      "entry_id": "LEDGER-1788192427728-ITEM-008",
+      "timestamp": "2026-08-31T16:07:07.727Z",
+      "item_id": "ITEM-008",
+      "item_name": "Floral Summer Flare Dress",
+      "qty_change": -1,
+      "qty_after": 14,
+      "reason": "Sales Checkout",
+      "reference_no": "INV-20260831-0017"
+    },
+    {
+      "entry_id": "LEDGER-1788192427728-ITEM-005",
+      "timestamp": "2026-08-31T16:07:07.727Z",
+      "item_id": "ITEM-005",
+      "item_name": "Slim Fit Stretch Chinos",
+      "qty_change": -1,
+      "qty_after": 19,
+      "reason": "Sales Checkout",
+      "reference_no": "INV-20260831-0017"
+    },
+    {
+      "entry_id": "LEDGER-1788192427728-ITEM-002",
+      "timestamp": "2026-08-31T16:07:07.727Z",
+      "item_id": "ITEM-002",
+      "item_name": "Classic Oxford Cotton Shirt",
+      "qty_change": -1,
+      "qty_after": 16,
+      "reason": "Sales Checkout",
+      "reference_no": "INV-20260831-0017"
+    },
+    {
+      "entry_id": "LEDGER-1788192427728-ITEM-004",
+      "timestamp": "2026-08-31T16:07:07.727Z",
+      "item_id": "ITEM-004",
+      "item_name": "Slim Fit Stretch Chinos",
+      "qty_change": -1,
+      "qty_after": 10,
+      "reason": "Sales Checkout",
+      "reference_no": "INV-20260831-0017"
+    },
+    {
+      "entry_id": "LEDGER-1788192427728-ITEM-007",
+      "timestamp": "2026-08-31T16:07:07.727Z",
+      "item_id": "ITEM-007",
+      "item_name": "Anarkali Embroidered Kurti",
+      "qty_change": -2,
+      "qty_after": 6,
+      "reason": "Sales Checkout",
+      "reference_no": "INV-20260831-0017"
+    },
+    {
+      "entry_id": "LEDGER-1788192427728-ITEM-013",
+      "timestamp": "2026-08-31T16:07:07.727Z",
+      "item_id": "ITEM-013",
+      "item_name": "Silk Pocket Squares (Set of 3)",
+      "qty_change": -3,
+      "qty_after": 0,
+      "reason": "Sales Checkout",
+      "reference_no": "INV-20260831-0017"
+    },
+    {
+      "entry_id": "LEDGER-1788192427728-ITEM-006",
+      "timestamp": "2026-08-31T16:07:07.727Z",
+      "item_id": "ITEM-006",
+      "item_name": "Raw Denim Selvedge Jeans",
+      "qty_change": -3,
+      "qty_after": 5,
+      "reason": "Sales Checkout",
+      "reference_no": "INV-20260831-0017"
+    },
+    {
+      "entry_id": "LEDGER-1788192318308-ITEM-004",
+      "timestamp": "2026-08-31T16:05:18.307Z",
+      "item_id": "ITEM-004",
+      "item_name": "Slim Fit Stretch Chinos",
+      "qty_change": -3,
+      "qty_after": 11,
+      "reason": "Sales Checkout",
+      "reference_no": "INV-20260831-0016"
+    },
+    {
+      "entry_id": "LEDGER-1788175047167-430",
+      "timestamp": "2026-08-31T11:17:27.168Z",
+      "item_id": "ITEM-001",
+      "item_name": "Classic Oxford Cotton Shirt",
+      "qty_change": 10,
+      "qty_after": 181,
+      "reason": "Goods Receiving (GRN: GRN-20260831-004)",
+      "reference_no": "INV-40374"
+    },
+    {
+      "entry_id": "LEDGER-1788174979322-ITEM-001",
+      "timestamp": "2026-08-31T11:16:19.322Z",
+      "item_id": "ITEM-001",
+      "item_name": "Classic Oxford Cotton Shirt",
+      "qty_change": -1,
+      "qty_after": 171,
+      "reason": "Sales Checkout",
+      "reference_no": "INV-20260831-0015"
+    },
+    {
+      "entry_id": "LEDGER-1788173711450-108",
+      "timestamp": "2026-08-31T10:55:11.450Z",
+      "item_id": "ITEM-001",
+      "item_name": "Classic Oxford Cotton Shirt",
+      "qty_change": 15,
+      "qty_after": 172,
+      "reason": "Goods Receiving (GRN: GRN-20260831-003)",
+      "reference_no": "INV-TEST-VENDOR-99"
+    },
+    {
+      "entry_id": "LEDGER-1788173711438",
+      "timestamp": "2026-08-31T10:55:11.439Z",
+      "item_id": "ITEM-001",
+      "item_name": "Classic Oxford Cotton Shirt",
+      "qty_change": 10,
+      "qty_after": 157,
+      "reason": "Supplier Purchase GRN",
+      "reference_no": "PO-2026-TEST"
+    },
+    {
+      "entry_id": "LEDGER-1788173711423-ITEM-001",
+      "timestamp": "2026-08-31T10:55:11.422Z",
+      "item_id": "ITEM-001",
+      "item_name": "Classic Oxford Cotton Shirt",
+      "qty_change": -2,
+      "qty_after": 147,
+      "reason": "Sales Checkout",
+      "reference_no": "INV-20260831-0014"
+    },
+    {
+      "entry_id": "LEDGER-1788172238529-687",
+      "timestamp": "2026-08-31T10:30:38.530Z",
+      "item_id": "ITEM-001",
+      "item_name": "Classic Oxford Cotton Shirt",
+      "qty_change": 15,
+      "qty_after": 149,
+      "reason": "Goods Receiving (GRN: GRN-20260831-002)",
+      "reference_no": "INV-TEST-VENDOR-99"
+    },
+    {
+      "entry_id": "LEDGER-1788172238512",
+      "timestamp": "2026-08-31T10:30:38.513Z",
+      "item_id": "ITEM-001",
+      "item_name": "Classic Oxford Cotton Shirt",
+      "qty_change": 10,
+      "qty_after": 134,
+      "reason": "Supplier Purchase GRN",
+      "reference_no": "PO-2026-TEST"
+    },
+    {
+      "entry_id": "LEDGER-1788172238499-ITEM-001",
+      "timestamp": "2026-08-31T10:30:38.499Z",
+      "item_id": "ITEM-001",
+      "item_name": "Classic Oxford Cotton Shirt",
+      "qty_change": -2,
+      "qty_after": 124,
+      "reason": "Sales Checkout",
+      "reference_no": "INV-20260831-0013"
+    },
+    {
+      "entry_id": "LEDGER-1788171210491",
+      "timestamp": "2026-08-31T10:13:30.493Z",
+      "item_id": "ITEM-001",
+      "item_name": "Classic Oxford Cotton Shirt",
+      "qty_change": 15,
+      "qty_after": 126,
+      "reason": "Supplier Purchase GRN",
+      "reference_no": "PO-2026-SUP1"
+    },
+    {
+      "entry_id": "LEDGER-1788169951428-431",
+      "timestamp": "2026-08-31T09:52:31.428Z",
+      "item_id": "ITEM-001",
+      "item_name": "Classic Oxford Cotton Shirt",
+      "qty_change": 15,
+      "qty_after": 111,
+      "reason": "Goods Receiving (GRN: GRN-20260831-001)",
+      "reference_no": "INV-TEST-VENDOR-99"
+    },
+    {
+      "entry_id": "LEDGER-1788169951413",
+      "timestamp": "2026-08-31T09:52:31.413Z",
+      "item_id": "ITEM-001",
+      "item_name": "Classic Oxford Cotton Shirt",
+      "qty_change": 10,
+      "qty_after": 96,
+      "reason": "Supplier Purchase GRN",
+      "reference_no": "PO-2026-TEST"
+    },
+    {
+      "entry_id": "LEDGER-1788169951406-ITEM-001",
+      "timestamp": "2026-08-31T09:52:31.406Z",
+      "item_id": "ITEM-001",
+      "item_name": "Classic Oxford Cotton Shirt",
+      "qty_change": -2,
+      "qty_after": 86,
+      "reason": "Sales Checkout",
+      "reference_no": "INV-20260831-0012"
+    },
+    {
+      "entry_id": "LEDGER-1788169926848",
+      "timestamp": "2026-08-31T09:52:06.848Z",
+      "item_id": "ITEM-001",
+      "item_name": "Classic Oxford Cotton Shirt",
+      "qty_change": 10,
+      "qty_after": 88,
+      "reason": "Supplier Purchase GRN",
+      "reference_no": "PO-2026-TEST"
+    },
+    {
+      "entry_id": "LEDGER-1788169926838-ITEM-001",
+      "timestamp": "2026-08-31T09:52:06.838Z",
+      "item_id": "ITEM-001",
+      "item_name": "Classic Oxford Cotton Shirt",
+      "qty_change": -2,
+      "qty_after": 78,
+      "reason": "Sales Checkout",
+      "reference_no": "INV-20260831-0011"
+    },
+    {
+      "entry_id": "LEDGER-1788168638864-ITEM-007",
+      "timestamp": "2026-08-31T09:30:38.864Z",
+      "item_id": "ITEM-007",
+      "item_name": "Anarkali Embroidered Kurti",
+      "qty_change": -4,
+      "qty_after": 8,
+      "reason": "Sales Checkout",
+      "reference_no": "INV-20260831-0010"
+    },
+    {
+      "entry_id": "LEDGER-1788168236526",
+      "timestamp": "2026-08-31T09:23:56.526Z",
+      "item_id": "ITEM-001",
+      "item_name": "Classic Oxford Cotton Shirt",
+      "qty_change": 10,
+      "qty_after": 80,
+      "reason": "Supplier Purchase GRN",
+      "reference_no": "PO-2026-TEST"
+    },
+    {
+      "entry_id": "LEDGER-1788168236522-ITEM-001",
+      "timestamp": "2026-08-31T09:23:56.522Z",
+      "item_id": "ITEM-001",
+      "item_name": "Classic Oxford Cotton Shirt",
+      "qty_change": -2,
+      "qty_after": 70,
+      "reason": "Sales Checkout",
+      "reference_no": "INV-20260831-0009"
+    },
+    {
+      "entry_id": "LEDGER-1788168095330",
+      "timestamp": "2026-08-31T09:21:35.330Z",
+      "item_id": "ITEM-001",
+      "item_name": "Classic Oxford Cotton Shirt",
+      "qty_change": 10,
+      "qty_after": 72,
+      "reason": "Supplier Purchase GRN",
+      "reference_no": "PO-2026-TEST"
+    },
+    {
+      "entry_id": "LEDGER-1788168095326-ITEM-001",
+      "timestamp": "2026-08-31T09:21:35.326Z",
+      "item_id": "ITEM-001",
+      "item_name": "Classic Oxford Cotton Shirt",
+      "qty_change": -2,
+      "qty_after": 62,
+      "reason": "Sales Checkout",
+      "reference_no": "INV-20260831-0008"
+    },
     {
       "entry_id": "LEDGER-1788167491256",
       "timestamp": "2026-08-31T09:11:31.256Z",
@@ -936,61 +596,8 @@
       "active": true
     }
   ],
-  "suppliers": [
-    {
-      "id": "SUP-01",
-      "name": "Apex Electronics & Apparel Supplies",
-      "contact": "+91 98111 99999",
-      "email": "orders@apexsupplies.com",
-      "gstin": "27AABCA1234F1Z1",
-      "pending_po": 2,
-      "category": "Shirts & Trousers"
-    },
-    {
-      "id": "SUP-02",
-      "name": "Zenith Global Logistics & Pure Fabrics",
-      "contact": "+91 98222 33344",
-      "email": "supply@zenithtextiles.com",
-      "gstin": "27AABCA5678F1Z2",
-      "pending_po": 1,
-      "category": "Fabrics & Silk"
-    },
-    {
-      "id": "SUP-03",
-      "name": "TrendTextiles Ltd.",
-      "contact": "+91 98333 44455",
-      "email": "sales@trendtextiles.com",
-      "gstin": "27AABCA9012F1Z3",
-      "pending_po": 0,
-      "category": "Accessories & Belts"
-    }
-  ],
-  "expenses": [
-    {
-      "id": "EXP-01",
-      "category": "Store Utilities",
-      "description": "Monthly electricity bill",
-      "amount": 3500,
-      "payment_mode": "UPI",
-      "date": "2026-08-30T11:20:21.103Z"
-    },
-    {
-      "id": "EXP-02",
-      "category": "Packaging",
-      "description": "Bulk carry bags 500 pcs",
-      "amount": 1800,
-      "payment_mode": "Cash",
-      "date": "2026-08-29T11:20:21.103Z"
-    },
-    {
-      "id": "EXP-03",
-      "category": "Tea & Refreshments",
-      "description": "Daily store pantry",
-      "amount": 350,
-      "payment_mode": "Cash",
-      "date": "2026-08-30T11:20:21.103Z"
-    }
-  ],
+  "suppliers": [],
+  "expenses": [],
   "attendance": [
     {
       "id": "ATT-01",
@@ -1057,6 +664,59 @@
       "status": "PENDING",
       "channel": "Delivery Partner",
       "created_at": "2026-08-30T09:20:21.296Z"
+    }
+  ],
+  "grn_records": [],
+  "returns": [],
+  "purchase_orders": [],
+  "coupons": [
+    {
+      "id": "COUP-005",
+      "code": "SUMMER25",
+      "type": "percent",
+      "value": 25,
+      "description": "Summer 25% off",
+      "min_amount": null,
+      "active": true,
+      "usage_count": 0,
+      "created_at": "2026-08-31T11:11:42.798Z"
+    },
+    {
+      "id": "COUP-001",
+      "code": "WELCOME10",
+      "type": "percent",
+      "value": 10,
+      "description": "Welcome 10% off",
+      "active": true,
+      "usage_count": 0
+    },
+    {
+      "id": "COUP-002",
+      "code": "DIWALI20",
+      "type": "percent",
+      "value": 20,
+      "description": "Diwali Special 20% off",
+      "active": true,
+      "usage_count": 0
+    },
+    {
+      "id": "COUP-003",
+      "code": "FLAT200",
+      "type": "flat",
+      "value": 200,
+      "description": "Flat ₹200 off on orders above ₹1000",
+      "min_amount": 1000,
+      "active": true,
+      "usage_count": 0
+    },
+    {
+      "id": "COUP-004",
+      "code": "SUMMER15",
+      "type": "percent",
+      "value": 15,
+      "description": "Summer Sale 15% off",
+      "active": false,
+      "usage_count": 3
     }
   ]
 }

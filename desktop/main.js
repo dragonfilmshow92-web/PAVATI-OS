@@ -4,19 +4,25 @@ const http = require('http');
 
 let mainWindow;
 
-function checkServerReady(retries = 20, delay = 500) {
+function checkServerReady(retries = 30, delay = 500) {
+  const API_KEY = 'tioras-pos-secret-2026';
   return new Promise((resolve, reject) => {
     function ping() {
-      http.get('http://localhost:3000/api/settings', (res) => {
-        if (res.statusCode === 200) {
-          resolve();
-        } else if (retries > 0) {
-          retries--;
-          setTimeout(ping, delay);
-        } else {
-          reject(new Error('Server timeout'));
+      const req = http.get(
+        'http://localhost:3000/api/settings',
+        { headers: { 'x-api-key': API_KEY } },
+        (res) => {
+          if (res.statusCode === 200) {
+            resolve();
+          } else if (retries > 0) {
+            retries--;
+            setTimeout(ping, delay);
+          } else {
+            reject(new Error('Server timeout'));
+          }
         }
-      }).on('error', () => {
+      );
+      req.on('error', () => {
         if (retries > 0) {
           retries--;
           setTimeout(ping, delay);
@@ -24,6 +30,7 @@ function checkServerReady(retries = 20, delay = 500) {
           reject(new Error('Server unreachable'));
         }
       });
+      req.end();
     }
     ping();
   });
@@ -35,8 +42,9 @@ async function createWindow() {
     height: 900,
     minWidth: 1024,
     minHeight: 700,
-    title: 'Tioras Supermarket OS & Retail POS',
-    backgroundColor: '#0b0f19',
+    title: 'MCT POS — Enterprise Retail Suite',
+    icon: path.join(__dirname, '..', 'client', 'app-icon.ico'),
+    backgroundColor: '#090d16',
     show: false,
     webPreferences: {
       nodeIntegration: false,
