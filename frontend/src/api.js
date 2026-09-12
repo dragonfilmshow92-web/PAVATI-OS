@@ -8,23 +8,37 @@ function getHeaders() {
   };
 }
 
-// GET fetch with error resilience
+// GET fetch with error resilience and clear error message propagation
 async function apiFetch(url) {
   try {
     const res = await fetch(url, { headers: getHeaders() });
-    if (!res.ok) {
-      console.warn(`API GET ${res.status} on ${url}`);
-      return { success: false, data: null, error: `HTTP ${res.status}` };
-    }
     const contentType = res.headers.get('content-type') || '';
-    if (!contentType.includes('application/json')) {
-      console.warn(`API GET non-JSON response on ${url}`);
-      return { success: false, data: null, error: 'Non-JSON response' };
+    let json = null;
+    if (contentType.includes('application/json')) {
+      try {
+        json = await res.json();
+      } catch (e) {}
     }
-    return await res.json();
+
+    if (!res.ok) {
+      const errMsg = json?.message || json?.error || (res.status === 405 ? 'Cloud endpoint method not allowed' : `HTTP ${res.status} ${res.statusText}`);
+      console.warn(`API GET ${res.status} on ${url}:`, errMsg);
+      return { success: false, data: null, error: errMsg, message: errMsg, status: res.status };
+    }
+
+    if (!json) {
+      console.warn(`API GET non-JSON response on ${url}`);
+      return { success: false, data: null, error: 'Non-JSON response', message: 'Received non-JSON response from server' };
+    }
+    return json;
   } catch (err) {
     console.warn('API GET error on ' + url + ':', err.message);
-    return { success: false, data: null, error: err.message };
+    return { 
+      success: false, 
+      data: null, 
+      error: err.message, 
+      message: `Network error: ${err.message}. Is the backend server running on http://localhost:3000?` 
+    };
   }
 }
 
@@ -36,19 +50,46 @@ async function apiPost(url, method = 'POST', data) {
       headers: getHeaders(),
       body: data !== undefined ? JSON.stringify(data) : undefined
     });
-    if (!res.ok) {
-      console.warn(`API ${method} ${res.status} on ${url}`);
-      return { success: false, data: null, error: `HTTP ${res.status}` };
-    }
+
     const contentType = res.headers.get('content-type') || '';
-    if (!contentType.includes('application/json')) {
-      console.warn(`API ${method} non-JSON response on ${url}`);
-      return { success: false, data: null, error: 'Non-JSON response' };
+    let json = null;
+    if (contentType.includes('application/json')) {
+      try {
+        json = await res.json();
+      } catch (e) {}
     }
-    return await res.json();
+
+    if (!res.ok) {
+      const errMsg = json?.message || json?.error || (res.status === 405 ? 'Endpoint method not allowed (Static Hosting). Falling back to offline store.' : `HTTP ${res.status} ${res.statusText}`);
+      console.warn(`API ${method} ${res.status} on ${url}:`, errMsg);
+      return { 
+        success: false, 
+        data: null, 
+        error: errMsg, 
+        message: errMsg, 
+        status: res.status 
+      };
+    }
+
+    if (!json) {
+      console.warn(`API ${method} non-JSON response on ${url}`);
+      return { 
+        success: false, 
+        data: null, 
+        error: 'Non-JSON response', 
+        message: 'Server returned a non-JSON response (possibly a static page).' 
+      };
+    }
+
+    return json;
   } catch (err) {
     console.warn(`API ${method} error on ${url}:`, err.message);
-    return { success: false, data: null, error: err.message };
+    return { 
+      success: false, 
+      data: null, 
+      error: err.message, 
+      message: `Cannot connect to backend: ${err.message}. Please verify http://localhost:3000 is active.` 
+    };
   }
 }
 

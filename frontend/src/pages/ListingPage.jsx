@@ -122,6 +122,11 @@ export default function ListingPage() {
         showToast(`Item "${formData.name}" listed successfully!`, "success");
         try {
           localStorage.setItem('last_listed_item', JSON.stringify(payload));
+          // Cache in local items for instant offline availability
+          const existingLocal = JSON.parse(localStorage.getItem('pos_local_items') || '[]');
+          const filtered = existingLocal.filter(i => i.barcode !== payload.barcode && i.id !== createdItem.id);
+          filtered.unshift(createdItem);
+          localStorage.setItem('pos_local_items', JSON.stringify(filtered));
         } catch {}
         setLastItem(payload);
         await refreshItems();
@@ -160,7 +165,69 @@ export default function ListingPage() {
           rack_location: formData.rack_location
         });
       } else {
-        showToast(res.message || "Failed to create item", "danger");
+        // If server is offline, unreachable, or running on static hosting (HTTP 404/405/Network Error):
+        // Automatically save locally so the user is never blocked!
+        const isOfflineOrStatic = res.status === 404 || res.status === 405 || (res.error && (res.error.includes('Network error') || res.error.includes('Failed to fetch') || res.error.includes('Cannot connect')));
+        if (isOfflineOrStatic) {
+          const localId = 'ITEM-LOC-' + Math.random().toString(36).substring(2, 9).toUpperCase();
+          const fallbackItem = { 
+            ...payload, 
+            id: localId, 
+            _id: localId, 
+            active: true,
+            is_local_draft: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+
+          try {
+            const existingLocal = JSON.parse(localStorage.getItem('pos_local_items') || '[]');
+            const filtered = existingLocal.filter(i => i.barcode !== payload.barcode);
+            filtered.unshift(fallbackItem);
+            localStorage.setItem('pos_local_items', JSON.stringify(filtered));
+            localStorage.setItem('last_listed_item', JSON.stringify(payload));
+          } catch (e) {}
+
+          soundFx.itemListed();
+          showToast(`Item "${formData.name}" listed successfully! (Saved in local storage)`, "success");
+          setLastItem(payload);
+          await refreshItems();
+
+          if (target === 'receiving') {
+            try { sessionStorage.setItem('pending_receive_item', JSON.stringify(fallbackItem)); } catch (e) {}
+            setCurrentPage('receiving');
+            return;
+          }
+          if (target === 'products') {
+            setCurrentPage('products');
+            return;
+          }
+
+          // Reset form for next item
+          setFormData({
+            barcode: generateBarcode(),
+            name: '',
+            category: formData.category,
+            hsn_code: formData.hsn_code,
+            subcategory: formData.subcategory,
+            sale_category: formData.sale_category,
+            brand: formData.brand,
+            customBrand: formData.customBrand,
+            gst_rate: formData.gst_rate,
+            tax_inclusive: formData.tax_inclusive,
+            selling_price: 0,
+            mrp: 0,
+            min_stock: formData.min_stock,
+            max_stock: formData.max_stock,
+            cost_price: 0,
+            stock_qty: 0,
+            rack_location: formData.rack_location
+          });
+          return;
+        }
+
+        // Show exact error message returned by server (e.g. "Barcode is already used by...")
+        showToast(res.message || res.error || "Failed to create item", "danger");
       }
     } catch (err) {
       showToast("Error saving item: " + err.message, "danger");

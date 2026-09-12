@@ -15,8 +15,10 @@ export function AppProvider({ children }) {
   const getInitialPage = () => {
     if (typeof window !== 'undefined') {
       const path = window.location.pathname.replace(/^\/+/, '').trim().toLowerCase();
+      if (path === 'new-listing') return 'listing';
       if (VALID_PAGES.includes(path)) return path;
       const hash = window.location.hash.replace(/^#\/?/, '').trim().toLowerCase();
+      if (hash === 'new-listing') return 'listing';
       if (VALID_PAGES.includes(hash)) return hash;
     }
     return 'dashboard';
@@ -135,6 +137,38 @@ export function AppProvider({ children }) {
     } catch (e) {}
   };
 
+  const getMergedItems = (remoteItems = []) => {
+    try {
+      const local = JSON.parse(localStorage.getItem('pos_local_items') || '[]');
+      if (!Array.isArray(local) || local.length === 0) return remoteItems;
+      const remoteIds = new Set(remoteItems.map(i => i.barcode || i.id));
+      const nonSynced = local.filter(i => !remoteIds.has(i.barcode || i.id));
+      return [...remoteItems, ...nonSynced];
+    } catch {
+      return remoteItems;
+    }
+  };
+
+  const syncLocalItemsToServer = async (remoteItems = []) => {
+    try {
+      const local = JSON.parse(localStorage.getItem('pos_local_items') || '[]');
+      const remoteBarcodes = new Set(remoteItems.map(i => i.barcode));
+      const draftsToSync = local.filter(i => i.is_local_draft && !remoteBarcodes.has(i.barcode));
+      if (draftsToSync.length === 0) return;
+      for (const draft of draftsToSync) {
+        try {
+          const { is_local_draft, id, _id, ...cleanData } = draft;
+          const syncRes = await api.createItem(cleanData);
+          if (syncRes && (syncRes.success || syncRes.id)) {
+            draft.is_local_draft = false;
+            if (syncRes.data?.id) draft.id = syncRes.data.id;
+          }
+        } catch (e) {}
+      }
+      localStorage.setItem('pos_local_items', JSON.stringify(local));
+    } catch (e) {}
+  };
+
   const loadAllData = async () => {
     try {
       const [itemsRes, catRes, supRes, custRes, shiftRes, setRes, grnRes] = await Promise.allSettled([
@@ -147,7 +181,14 @@ export function AppProvider({ children }) {
         api.getGRNRecords()
       ]);
 
-      if (itemsRes.status === 'fulfilled' && itemsRes.value.success) setItems(itemsRes.value.data);
+      if (itemsRes.status === 'fulfilled' && itemsRes.value.success && Array.isArray(itemsRes.value.data)) {
+        setItems(getMergedItems(itemsRes.value.data));
+        syncLocalItemsToServer(itemsRes.value.data);
+      } else {
+        const local = JSON.parse(localStorage.getItem('pos_local_items') || '[]');
+        if (Array.isArray(local) && local.length > 0) setItems(local);
+      }
+
       if (catRes.status === 'fulfilled' && catRes.value.success) setCategories(catRes.value.data);
       if (supRes.status === 'fulfilled' && supRes.value.success) setSuppliers(supRes.value.data);
       if (custRes.status === 'fulfilled' && custRes.value.success) setCustomers(custRes.value.data);
@@ -172,9 +213,17 @@ export function AppProvider({ children }) {
   const refreshItems = async () => {
     try {
       const res = await api.getItems();
-      if (res && res.success && Array.isArray(res.data)) setItems(res.data);
+      if (res && res.success && Array.isArray(res.data)) {
+        setItems(getMergedItems(res.data));
+        syncLocalItemsToServer(res.data);
+      } else {
+        const local = JSON.parse(localStorage.getItem('pos_local_items') || '[]');
+        if (Array.isArray(local) && local.length > 0) setItems(local);
+      }
     } catch (e) {
       console.warn('refreshItems failed:', e);
+      const local = JSON.parse(localStorage.getItem('pos_local_items') || '[]');
+      if (Array.isArray(local) && local.length > 0) setItems(local);
     }
   };
 
