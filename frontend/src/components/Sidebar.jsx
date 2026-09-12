@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { useApp } from '../context/AppContext';
 import { 
   Globe, 
@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 
 export default function Sidebar() {
-  const { currentPage, setCurrentPage, theme, toggleTheme, sidebarOpen, toggleSidebar, closeSidebar, settings } = useApp();
+  const { currentPage, setCurrentPage, theme, toggleTheme, sidebarOpen, toggleSidebar, closeSidebar, settings, currentUser } = useApp();
   const storeName = settings?.store_name || 'PAVATI OS';
 
   const menuSections = [
@@ -73,7 +73,8 @@ export default function Sidebar() {
     {
       category: 'SYSTEM',
       items: [
-        { id: 'settings', label: 'Store Settings', icon: Settings, kbd: 'F10' }
+        { id: 'settings', label: 'Store Settings', icon: Settings, kbd: 'F10' },
+        { id: 'landing', label: 'Product Showcase', icon: Globe }
       ]
     }
   ];
@@ -150,15 +151,32 @@ export default function Sidebar() {
       {/* Footer User & Theme Switcher */}
       <div className="sidebar-footer">
         <div className="user-card">
-          <div className="user-profile-left">
-            <div className="user-avatar" title="Admin Cashier (Register #1)">
-              {storeName.slice(0, 2).toUpperCase()}
+          <div 
+            className="user-profile-left"
+            onClick={() => {
+              if (!currentUser) setCurrentPage('login');
+            }}
+            style={{ cursor: 'pointer' }}
+            title={currentUser ? `Logged in as ${currentUser.displayName || currentUser.email}` : "Click to sign in"}
+          >
+            <div className="user-avatar" title="Cashier Avatar">
+              {currentUser?.photoURL ? (
+                <img 
+                  src={currentUser.photoURL} 
+                  alt="Avatar" 
+                  style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} 
+                />
+              ) : (
+                (currentUser?.displayName || storeName).slice(0, 2).toUpperCase()
+              )}
             </div>
             <div className="user-details">
-              <div className="user-name">Admin Cashier</div>
+              <div className="user-name">
+                {currentUser?.displayName || (currentUser?.isGuest ? 'Demo Cashier' : 'Terminal Cashier')}
+              </div>
               <div className="user-status">
                 <span className="pulse-dot"></span>
-                Register #1 Live
+                {currentUser?.isGuest ? 'Demo Station' : 'Cloud Online'}
               </div>
             </div>
           </div>

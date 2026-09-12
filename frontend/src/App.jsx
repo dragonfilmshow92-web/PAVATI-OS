@@ -35,12 +35,18 @@ import PurchaseOrdersPage from './pages/PurchaseOrdersPage';
 import CouponsPage from './pages/CouponsPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import ExpensesPage from './pages/ExpensesPage';
+import LandingPage from './pages/LandingPage';
+import LoginPage from './pages/LoginPage';
 
 function AppLayout() {
   const { currentPage, setCurrentPage, modalState, toasts, sidebarOpen, closeSidebar, toggleSidebar } = useApp();
 
+  const isPublicPage = currentPage === 'landing' || currentPage === 'login';
+
   // Keyboard shortcut listener (F1 to F10, Ctrl+B for Sidebar toggle)
   useEffect(() => {
+    if (isPublicPage) return; // Don't trigger POS shortcuts while on landing/login pages
+
     const handleKeyDown = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
         e.preventDefault();
@@ -60,7 +66,7 @@ function AppLayout() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [setCurrentPage, toggleSidebar]);
+  }, [setCurrentPage, toggleSidebar, isPublicPage]);
 
   const renderPage = () => {
     switch (currentPage) {
@@ -81,9 +87,46 @@ function AppLayout() {
       case 'coupons': return <CouponsPage />;
       case 'analytics': return <AnalyticsPage />;
       case 'expenses': return <ExpensesPage />;
+      case 'landing': return <LandingPage />;
+      case 'login': return <LoginPage />;
       default: return <DashboardPage />;
     }
   };
+
+  const toastContainer = (
+    <div style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 9999, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      {toasts.map(toast => (
+        <div 
+          key={toast.id}
+          style={{
+            padding: '10px 18px',
+            borderRadius: 'var(--radius-sm)',
+            fontSize: '13px',
+            fontWeight: '700',
+            color: '#ffffff',
+            boxShadow: 'var(--shadow-md)',
+            background: toast.type === 'success' ? 'var(--accent-emerald)' : 
+                        toast.type === 'danger' ? 'var(--accent-red)' : 
+                        toast.type === 'warning' ? 'var(--accent-amber)' : 'var(--accent-blue)',
+            animation: 'fadeIn 0.2s ease'
+          }}
+        >
+          {toast.message}
+        </div>
+      ))}
+    </div>
+  );
+
+  // If viewing public landing or login page, render full-screen without cashier app-shell
+  if (isPublicPage) {
+    return (
+      <div className="public-viewport-container" style={{ position: 'relative', width: '100%', minHeight: '100vh', background: 'var(--bg-primary)' }}>
+        <AmbientBackdrop />
+        {currentPage === 'landing' ? <LandingPage /> : <LoginPage />}
+        {toastContainer}
+      </div>
+    );
+  }
 
   return (
     <div className="app-shell">
@@ -122,27 +165,7 @@ function AppLayout() {
       {modalState.type === 'thermalPrint' && <ThermalPrintModal />}
 
       {/* Toast Alerts System */}
-      <div style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 9999, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        {toasts.map(toast => (
-          <div 
-            key={toast.id}
-            style={{
-              padding: '10px 18px',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: '13px',
-              fontWeight: '700',
-              color: '#ffffff',
-              boxShadow: 'var(--shadow-md)',
-              background: toast.type === 'success' ? 'var(--accent-emerald)' : 
-                          toast.type === 'danger' ? 'var(--accent-red)' : 
-                          toast.type === 'warning' ? 'var(--accent-amber)' : 'var(--accent-blue)',
-              animation: 'fadeIn 0.2s ease'
-            }}
-          >
-            {toast.message}
-          </div>
-        ))}
-      </div>
+      {toastContainer}
     </div>
   );
 }

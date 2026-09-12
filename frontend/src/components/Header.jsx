@@ -23,7 +23,20 @@ import soundFx from '../utils/sounds';
 import PWAInstallButton from './PWAInstallButton';
 
 export default function Header() {
-  const { currentPage, setCurrentPage, settings, activeShift, setModalState, toggleSidebar, sidebarOpen, showToast, theme, toggleTheme } = useApp();
+  const { 
+    currentPage, 
+    setCurrentPage, 
+    settings, 
+    activeShift, 
+    setModalState, 
+    toggleSidebar, 
+    sidebarOpen, 
+    showToast, 
+    theme, 
+    toggleTheme,
+    currentUser,
+    logoutUser 
+  } = useApp();
   const [timeStr, setTimeStr] = useState('');
   const [soundActive, setSoundActive] = useState(() => soundFx.isEnabled());
   const [refreshing, setRefreshing] = useState(false);
@@ -120,6 +133,16 @@ export default function Header() {
             <span>POS Counter</span>
             <kbd className="header-kbd">F2</kbd>
           </button>
+
+          <button 
+            type="button" 
+            className={`header-pill-btn ${currentPage === 'landing' ? 'active' : ''}`}
+            onClick={() => setCurrentPage('landing')}
+            title="PAVATI OS Overview & Landing Showcase"
+          >
+            <Sparkles size={14} color="var(--accent-indigo)" />
+            <span>Portal</span>
+          </button>
         </div>
 
         {/* Live Digital Clock */}
@@ -193,14 +216,46 @@ export default function Header() {
             <Maximize size={15} />
           </button>
 
+          {/* Cashier Identity Badge */}
+          <div 
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '6px',
+              padding: '4px 10px',
+              borderRadius: '999px',
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border-color)',
+              fontSize: '12px',
+              fontWeight: '600',
+              cursor: 'pointer'
+            }}
+            onClick={() => {
+              if (!currentUser) setCurrentPage('login');
+            }}
+            title={currentUser ? `Signed in as ${currentUser.displayName || currentUser.email}` : "Click to sign in"}
+          >
+            {currentUser?.photoURL ? (
+              <img 
+                src={currentUser.photoURL} 
+                alt="Avatar" 
+                style={{ width: '18px', height: '18px', borderRadius: '50%', objectFit: 'cover' }} 
+              />
+            ) : (
+              <User size={13} color="var(--accent-indigo)" />
+            )}
+            <span style={{ maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {currentUser?.displayName || (currentUser?.isGuest ? 'Demo' : 'Sign In')}
+            </span>
+          </div>
+
           {/* Lock Register / Sign Out */}
           <button 
             type="button" 
             className="header-icon-btn btn-danger-tint"
-            onClick={() => {
+            onClick={async () => {
               if (confirm("Lock terminal and sign out?")) {
-                showToast("Terminal locked.", "info");
-                setCurrentPage('dashboard');
+                await logoutUser();
               }
             }}
             title="Lock Register / End Cashier Session"

@@ -1,6 +1,15 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { api } from '../api';
 import soundFx from '../utils/sounds';
+import { 
+  auth, 
+  loginWithGoogle as fbLoginWithGoogle, 
+  loginWithEmail as fbLoginWithEmail, 
+  registerWithEmail as fbRegisterWithEmail, 
+  logoutUser as fbLogoutUser, 
+  resetPassword as fbResetPassword 
+} from '../firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 
 const AppContext = createContext(null);
 
@@ -9,7 +18,7 @@ export function AppProvider({ children }) {
     'dashboard', 'pos', 'inventory', 'products', 'receiving', 
     'listing', 'barcode', 'suppliers', 'invoices', 'customers', 
     'reports', 'settings', 'returns', 'purchase-orders', 
-    'coupons', 'analytics', 'expenses'
+    'coupons', 'analytics', 'expenses', 'landing', 'login'
   ];
 
   const getInitialPage = () => {
@@ -70,6 +79,113 @@ export function AppProvider({ children }) {
       setSidebarOpen(false);
       localStorage.setItem('pos_sidebar_open', 'false');
     }
+  };
+
+  // Firebase Authentication State
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('pos_cached_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [isAuthReady, setIsAuthReady] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        const userInfo = {
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName || user.email?.split('@')[0] || 'User',
+          photoURL: user.photoURL,
+          isGuest: false
+        };
+        setCurrentUser(userInfo);
+        try { localStorage.setItem('pos_cached_user', JSON.stringify(userInfo)); } catch {}
+      } else {
+        const cached = localStorage.getItem('pos_cached_user');
+        if (cached) {
+          try {
+            const parsed = JSON.parse(cached);
+            if (parsed?.isGuest) {
+              setCurrentUser(parsed);
+              setIsAuthReady(true);
+              return;
+            }
+          } catch {}
+        }
+        setCurrentUser(null);
+        try { localStorage.removeItem('pos_cached_user'); } catch {}
+      }
+      setIsAuthReady(true);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const loginWithGoogle = async () => {
+    const res = await fbLoginWithGoogle();
+    if (res.success) {
+      showToast(`Welcome, ${res.user.displayName || 'User'}!`, 'success');
+      setCurrentPage('dashboard');
+    }
+    return res;
+  };
+
+  const loginWithEmail = async (email, password) => {
+    const res = await fbLoginWithEmail(email, password);
+    if (res.success) {
+      showToast(`Welcome back, ${res.user.displayName || res.user.email}!`, 'success');
+      setCurrentPage('dashboard');
+    }
+    return res;
+  };
+
+  const registerWithEmail = async (email, password, displayName) => {
+    const res = await fbRegisterWithEmail(email, password, displayName);
+    if (res.success) {
+      showToast(`Account created! Welcome, ${displayName || 'Cashier'}!`, 'success');
+      setCurrentPage('dashboard');
+    }
+    return res;
+  };
+
+  const logoutUser = async () => {
+    if (currentUser?.isGuest) {
+      setCurrentUser(null);
+      try { localStorage.removeItem('pos_cached_user'); } catch {}
+      showToast('Signed out of Guest Station', 'info');
+      setCurrentPage('login');
+      return { success: true };
+    }
+    const res = await fbLogoutUser();
+    if (res.success) {
+      setCurrentUser(null);
+      try { localStorage.removeItem('pos_cached_user'); } catch {}
+      showToast('Signed out successfully', 'info');
+      setCurrentPage('login');
+    }
+    return res;
+  };
+
+  const loginAsGuest = () => {
+    const guestInfo = {
+      uid: 'guest-' + Date.now(),
+      email: 'cashier@pavati-station.internal',
+      displayName: 'Admin Cashier',
+      photoURL: null,
+      isGuest: true
+    };
+    setCurrentUser(guestInfo);
+    try { localStorage.setItem('pos_cached_user', JSON.stringify(guestInfo)); } catch {}
+    showToast('Logged in as Station Cashier (Demo / Offline Mode)', 'info');
+    setCurrentPage('dashboard');
+  };
+
+  const resetPassword = async (email) => {
+    return await fbResetPassword(email);
   };
   const [items, setItems] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -623,7 +739,15 @@ export function AppProvider({ children }) {
       sidebarOpen,
       setSidebarOpen,
       toggleSidebar,
-      closeSidebar
+      closeSidebar,
+      currentUser,
+      isAuthReady,
+      loginWithGoogle,
+      loginWithEmail,
+      registerWithEmail,
+      logoutUser,
+      resetPassword,
+      loginAsGuest
     }}>
       {children}
     </AppContext.Provider>

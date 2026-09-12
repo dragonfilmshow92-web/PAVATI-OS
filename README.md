@@ -13,6 +13,7 @@ A modern, high-performance Retail Point of Sale (POS), Inventory, and Business M
 - **🔄 Sales Returns & Credit Notes**: Fast exchange/returns workflow with auto-generated credit notes and ledger updates.
 - **🎟️ Coupons & Promotions Engine**: Percentage and flat discount promo codes with min-spend and validity limits.
 - **👥 Customer CRM & Loyalty**: Track customer purchase history, loyalty points, store credit balance, and service reminders.
+- **🔐 Firebase Authentication & Luxury Landing Page**: Google 1-Click Sign-In, secure Email/Password register & login, password reset, guest cashier offline mode, and a high-converting Neo-FinTech landing page.
 - **☁️ Cloud & Local Hybrid**: Powered by MongoDB Atlas with full offline resilience, Electron standalone desktop app, supermarket kiosk mode, and Vercel cloud deployment.
 
 ---
