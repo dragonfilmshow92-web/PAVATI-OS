@@ -1,11 +1,11 @@
-﻿const { app, BrowserWindow, Menu, ipcMain } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain } = require('electron');
 const path = require('path');
 const http = require('http');
 
 let mainWindow;
 
 function checkServerReady(retries = 30, delay = 500) {
-  const API_KEY = 'PAVATI OS-pos-secret-2026';
+  const API_KEY = process.env.POS_API_KEY || 'pavati-os-secret-2026';
   return new Promise((resolve, reject) => {
     function ping() {
       const req = http.get(
@@ -42,9 +42,9 @@ async function createWindow() {
     height: 900,
     minWidth: 1024,
     minHeight: 700,
-    title: 'MCT POS — Enterprise Retail Suite',
+    title: 'PAVATI OS — Enterprise Retail Suite',
     icon: path.join(__dirname, '..', 'client', 'app-icon.ico'),
-    backgroundColor: '#090d16',
+    backgroundColor: '#060911',
     show: false,
     webPreferences: {
       nodeIntegration: false,

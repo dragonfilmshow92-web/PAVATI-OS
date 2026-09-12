@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { api } from '../api';
 import soundFx from '../utils/sounds';
@@ -26,8 +26,10 @@ import {
   RotateCcw,
   X,
   CreditCard,
-  Percent
+  Percent,
+  Camera
 } from 'lucide-react';
+import CameraBarcodeScannerModal from '../components/Modals/CameraBarcodeScannerModal';
 
 export default function PosPage() {
   const { 
@@ -62,6 +64,7 @@ export default function PosPage() {
   const [activePromos, setActivePromos] = useState([]);
   const [couponInput, setCouponInput] = useState('');
   const [applyingCoupon, setApplyingCoupon] = useState(false);
+  const [cameraScannerOpen, setCameraScannerOpen] = useState(false);
 
   const barcodeInputRef = useRef(null);
 
@@ -97,10 +100,9 @@ export default function PosPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [cart.length, setModalState]);
 
-  // Handle barcode scanner gun (presses Enter upon scan)
-  const handleBarcodeSubmit = (e) => {
-    e?.preventDefault();
-    const raw = barcodeInput.trim();
+  // Universal barcode processing for both handheld laser guns and mobile camera scanner
+  const processBarcode = (code) => {
+    const raw = String(code || '').trim();
     if (!raw) return;
     const clean = raw.toLowerCase();
     const cleanNoZeros = clean.replace(/^0+/, '');
@@ -122,12 +124,18 @@ export default function PosPage() {
       addToCart(matched, 1, false);
       setBarcodeInput('');
       setProductSearchInput('');
-      setActiveRowIndex(cart.length); // highlight newly added
-      showToast ? showToast(`Added: ${matched.name}`, 'success') : null;
+      setActiveRowIndex(cart.length);
+      showToast ? showToast(`Added to bill: ${matched.name}`, 'success') : null;
     } else {
       soundFx.error();
       showToast ? showToast(`No item found matching: ${raw}`, 'warning') : alert(`No item found matching: ${raw}`);
     }
+  };
+
+  // Handle barcode scanner gun (presses Enter upon scan)
+  const handleBarcodeSubmit = (e) => {
+    e?.preventDefault();
+    processBarcode(barcodeInput);
   };
 
   // Handle customer search submit
@@ -223,6 +231,28 @@ export default function PosPage() {
                 <X size={14} />
               </button>
             )}
+            <button 
+              type="button" 
+              className="posbranch-camera-btn" 
+              onClick={() => setCameraScannerOpen(true)} 
+              title="Scan with Device/Mobile Camera"
+              style={{
+                background: 'rgba(59, 130, 246, 0.15)',
+                border: '1px solid rgba(59, 130, 246, 0.3)',
+                color: '#60a5fa',
+                borderRadius: '8px',
+                padding: '6px 10px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '12px',
+                fontWeight: '600'
+              }}
+            >
+              <Camera size={15} />
+              <span className="camera-btn-text">Camera</span>
+            </button>
             <button type="submit" className="posbranch-search-btn" title="Add Item (Enter)">
               <Plus size={16} />
             </button>
@@ -795,6 +825,13 @@ export default function PosPage() {
           </button>
         </div>
       </footer>
+
+      {/* Camera Barcode Scanner Modal for Mobile / Tablet / Desktop Camera */}
+      <CameraBarcodeScannerModal 
+        isOpen={cameraScannerOpen} 
+        onClose={() => setCameraScannerOpen(false)} 
+        onDetected={processBarcode} 
+      />
     </div>
   );
 }

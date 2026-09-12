@@ -1,19 +1,21 @@
 {
-  "name": "MCT POS — Retail & Supermarket OS",
-  "short_name": "MCT POS",
-  "description": "Enterprise Retail Point of Sale & Inventory Management Suite",
+  "name": "PAVATI OS — Enterprise Point of Sale",
+  "short_name": "PAVATI OS",
+  "description": "Enterprise Retail Point of Sale, Barcode Billing & Inventory Management Suite",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "orientation": "landscape",
-  "background_color": "#090d16",
-  "theme_color": "#00c6ff",
-  "categories": ["business", "finance", "productivity"],
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#060911",
+  "theme_color": "#060911",
+  "categories": ["business", "finance", "productivity", "utilities"],
   "icons": [
     {
       "src": "/favicon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/app-icon.png",
@@ -24,7 +26,8 @@
     {
       "src": "/favicon-192x192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "/favicon-32x32.png",
@@ -34,19 +37,19 @@
   ],
   "shortcuts": [
     {
-      "name": "POS Counter",
-      "url": "/#tab-pos",
-      "description": "Quick access to billing counter"
-    },
-    {
-      "name": "Invoices & Returns",
-      "url": "/#tab-invoices",
-      "description": "View sales history and process returns"
+      "name": "POS Billing Counter",
+      "url": "/pos",
+      "description": "Quick access to checkout counter"
     },
     {
       "name": "Inventory & Stock",
-      "url": "/#tab-inventory",
-      "description": "Inspect live stock and restock items"
+      "url": "/inventory",
+      "description": "Inspect stock and barcode labels"
+    },
+    {
+      "name": "Financial Reports",
+      "url": "/reports",
+      "description": "Daily sales and profit margins"
     }
   ]
 }

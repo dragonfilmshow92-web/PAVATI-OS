@@ -5,23 +5,35 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="alternate icon" type="image/x-icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" href="/app-icon.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="theme-color" content="#060911" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="PAVATI OS" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="format-detection" content="telephone=no" />
     <meta name="description" content="PAVATI OS — Enterprise Point of Sale &amp; Inventory Management Suite" />
     <link rel="manifest" href="/manifest.json" />
     <title>PAVATI OS — Point of Sale</title>
     <script>
-      // Automatically clean up any stale legacy Service Workers from previous versions
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(function(registrations) {
-          for (var registration of registrations) {
-            registration.unregister();
-          }
+      // Register Service Worker for PWA (Android, iOS, Windows, and Mac)
+      if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('/sw.js').catch(function(err) {
+            console.log('PWA Service Worker registration skipped:', err);
+          });
         });
       }
-      // Guarantee initial load switches to the state-of-the-art Midnight Obsidian theme
+
+      // Capture beforeinstallprompt for in-app install buttons
+      window.deferredInstallPrompt = null;
+      window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        window.deferredInstallPrompt = e;
+        window.dispatchEvent(new CustomEvent('pwa-install-ready'));
+      });
+
+      // Guarantee initial load switches to Midnight Obsidian theme
       try {
         if (!localStorage.getItem('pos_theme_v10_dark_enforce')) {
           localStorage.setItem('pos_theme', 'dark');
@@ -33,8 +45,8 @@
         document.documentElement.setAttribute('data-theme', 'dark');
       }
     </script>
-    <script type="module" crossorigin src="/assets/index-D5-yJ-dT.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-Elx6x5n_.css">
+    <script type="module" crossorigin src="/assets/index-B-CbFABe.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-BsC-NprI.css">
   </head>
   <body>
     <div id="root"></div>

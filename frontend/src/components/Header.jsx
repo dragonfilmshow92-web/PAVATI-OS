@@ -18,6 +18,7 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import soundFx from '../utils/sounds';
+import PWAInstallButton from './PWAInstallButton';
 
 export default function Header() {
   const { currentPage, setCurrentPage, settings, activeShift, setModalState, toggleSidebar, sidebarOpen, showToast } = useApp();
@@ -138,6 +139,9 @@ export default function Header() {
 
         {/* Action Button Group */}
         <div className="header-action-group">
+          {/* Universal PWA Install Button (Android, iOS, Windows, Mac) */}
+          <PWAInstallButton />
+
           {/* Sound FX Toggle */}
           <button 
             type="button" 
