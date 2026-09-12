@@ -2,19 +2,19 @@
   "settings": {
     "store_name": "PAVATI OS",
     "tagline": "Custom Point of Sale & Inventory Suite",
-    "address": "Shop 14, High Street Arcade, Market Central, India",
-    "phone": "+91 98765 43210",
+    "address": "",
+    "phone": "",
     "email": "contact@pavatios.com",
-    "gstin": "27AABCT1234F1Z5",
-    "upi_id": "7795208996-3@ybl",
-    "upi_merchant_name": "PRASHANT HIREMATH",
+    "gstin": "",
+    "upi_id": "",
+    "upi_merchant_name": "",
     "currency_symbol": "₹",
-    "receipt_header": "GST INVOICE / CASH MEMO",
+    "receipt_header": "TAX INVOICE / CASH MEMO",
     "receipt_footer": "Thank you for your business!\nExchange within 7 days with original bill.",
     "default_tax_rate": 12,
     "store_tagline": "Custom POS Solution",
-    "store_address": "Talikoti",
-    "store_phone": "9902857694"
+    "store_address": "",
+    "store_phone": ""
   },
   "categories": [
     {

@@ -5,9 +5,17 @@ frontend/node_modules/
 # Environment variables & secrets (CRITICAL - NEVER COMMIT)
 .env
 .env.*
+*.env
+server/.env
+server/.env.*
 frontend/.env
 frontend/.env.*
-!.env.example
+*.local
+*.pem
+*.key
+*.token
+*.cert
+!*.example
 
 
 # Build outputs

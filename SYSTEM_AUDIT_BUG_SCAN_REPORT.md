@@ -1,4 +1,4 @@
-﻿# Comprehensive Senior Developer System Audit & Bug Scan Report
+# Comprehensive Senior Developer System Audit & Bug Scan Report
 **Project:** Retail POS & Billing System (PAVATI OS v2.0)  
 **Date:** September 11, 2026  
 **Auditor:** Antigravity Senior Staff Software Architect  
@@ -204,7 +204,7 @@
 3. **CORS Wildcard (Medium Severity):**
    - Header `'Access-Control-Allow-Origin': '*'` is open to all domains.
 4. **Environment Secret Hygiene:**
-   - Production database credentials (`dragonfilmshow92_db_user`) are stored in plaintext `.env` in the working directory.
+   - Database credentials should be managed via environment variables and never committed to version control.
 
 ---
 
