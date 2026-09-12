@@ -1,4 +1,4 @@
-# Tioras Fashions Studio - Retail POS & Inventory Suite
+# PAVATI OS - Retail POS & Inventory Suite
 
 A modern, high-performance Retail Point of Sale (POS), Inventory, and Business Management system built for apparel, boutiques, and retail stores.
 
@@ -107,4 +107,4 @@ retail-pos/
 
 ## 📄 License
 
-MIT © [Tioras Fashions Studio](https://github.com/tyoras9686-ui/Tioras-Fashions-Studio)
+MIT © [PAVATI OS](https://github.com/dragonfilmshow92-web/PAVATI-OS)

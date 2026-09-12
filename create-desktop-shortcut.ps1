@@ -7,17 +7,17 @@ $desktopPaths = @(
 
 foreach ($desktop in $desktopPaths) {
     if (Test-Path $desktop) {
-        $oldShortcut = Join-Path $desktop "Tioras POS.lnk"
+        $oldShortcut = Join-Path $desktop "PAVATI OS.lnk"
         if (Test-Path $oldShortcut) {
             Remove-Item $oldShortcut -Force -ErrorAction SilentlyContinue
         }
 
-        $shortcutPath = Join-Path $desktop "MCT POS.lnk"
+        $shortcutPath = Join-Path $desktop "PAVATI OS.lnk"
         $shortcut = $wsh.CreateShortcut($shortcutPath)
         $shortcut.TargetPath = "c:\Users\dell\erpnext\retail-pos\launch-desktop-app.vbs"
         $shortcut.WorkingDirectory = "c:\Users\dell\erpnext\retail-pos"
         $shortcut.IconLocation = "c:\Users\dell\erpnext\retail-pos\client\app-icon.ico"
-        $shortcut.Description = "MCT POS - Enterprise Retail Point of Sale"
+        $shortcut.Description = "PAVATI OS - Enterprise Retail Point of Sale"
         $shortcut.Save()
         Write-Host "Desktop shortcut created successfully at: $shortcutPath"
     }

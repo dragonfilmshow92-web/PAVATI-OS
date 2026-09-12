@@ -222,7 +222,7 @@ export default function SettingsPage() {
             <div className="form-group">
               <label>Store / Trade Name *</label>
               <input type="text" name="store_name" className="form-control" required
-                value={form.store_name || ''} onChange={onChange} placeholder="PAVATI OS STUDIO" />
+                value={form.store_name || ''} onChange={onChange} placeholder="Your Store Name" />
             </div>
             <div className="form-group">
               <label>Tagline</label>
@@ -341,13 +341,13 @@ export default function SettingsPage() {
               <div className="form-col form-group">
                 <label>Legal / Registered Entity Name</label>
                 <input type="text" name="legal_name" className="form-control"
-                  value={form.legal_name || ''} onChange={onChange} placeholder="PAVATI OS PVT LTD" />
+                  value={form.legal_name || ''} onChange={onChange} placeholder="Your Business Name PVT LTD" />
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '3px' }}>As per GST certificate / ROC</div>
               </div>
               <div className="form-col form-group">
                 <label>Trade Name (if different)</label>
                 <input type="text" name="trade_name" className="form-control"
-                  value={form.trade_name || ''} onChange={onChange} placeholder="PAVATI OS STUDIO" />
+                  value={form.trade_name || ''} onChange={onChange} placeholder="Your Store Name" />
               </div>
             </div>
           </>}
@@ -506,7 +506,7 @@ export default function SettingsPage() {
               <div className="form-col form-group">
                 <label>UPI Merchant Display Name</label>
                 <input type="text" name="upi_merchant_name" className="form-control"
-                  value={form.upi_merchant_name || ''} onChange={onChange} placeholder="PAVATI OS STUDIO" />
+                  value={form.upi_merchant_name || ''} onChange={onChange} placeholder="Your Store Name" />
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '3px' }}>Shown in customer's UPI app when scanning</div>
               </div>
             </div>

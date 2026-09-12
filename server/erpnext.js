@@ -12,7 +12,7 @@ class ERPNextClient {
     this.url = (config.url || 'http://localhost:8000').replace(/\/$/, '');
     this.apiKey = config.api_key || '';
     this.apiSecret = config.api_secret || '';
-    this.company = config.company || 'PAVATI OS STUDIO';
+    this.company = config.company || 'PAVATI OS';
     this.warehouse = config.warehouse || 'Stores - TFS';
     this.posProfile = config.pos_profile || 'Standard POS';
     this.enabled = Boolean(config.enabled);

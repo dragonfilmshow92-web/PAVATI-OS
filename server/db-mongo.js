@@ -1,4 +1,4 @@
-﻿/**
+/**
  * db-mongo.js — MongoDB (Mongoose) Database Layer for PAVATI OS
  * Drop-in replacement for db.js using MongoDB Atlas (or local MongoDB)
  * Set MONGODB_URI in your .env file
@@ -117,8 +117,8 @@ async function seedInitialData() {
   // Initialize Settings
   await Settings.findByIdAndUpdate('store_settings', {
     store_name: 'PAVATI OS',
-    tagline: 'Fashion & Retail Studio',
-    store_tagline: 'Fashion & Retail Studio',
+    tagline: 'Custom POS & Retail Suite',
+    store_tagline: 'Custom POS & Retail Suite',
     address: 'Shop 1, Main Market',
     store_address: 'Shop 1, Main Market',
     phone: '',
@@ -132,7 +132,7 @@ async function seedInitialData() {
     receipt_header: 'TAX INVOICE / CASH MEMO',
     receipt_footer: 'Thank you for shopping with us!\nExchange within 7 days with original bill.',
     default_tax_rate: 12,
-    logo_url: '/PAVATI OS-logo.png',
+    logo_url: '/pavati-logo.png',
     invoice_counter: 0,
     initialized: true
   }, { upsert: true, new: true });

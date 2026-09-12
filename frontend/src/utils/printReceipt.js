@@ -29,7 +29,7 @@ function generateBarcodeDataUrl(value) {
  */
 export function buildReceiptHtml(invoice, settings = {}, paperSize = '80mm', barcodeDataUrl = null) {
   const storeName = settings.store_name || "PAVATI OS";
-  const tagline = settings.store_tagline || settings.tagline || "Powered by PAVATI OS";
+  const tagline = settings.store_tagline || settings.tagline || "PAVATI OS";
   const address = settings.store_address || settings.address || "";
   const phone = settings.store_phone || settings.phone || "";
   const gstin = settings.store_gstin || settings.gstin || "";

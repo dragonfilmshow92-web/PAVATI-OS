@@ -1,11 +1,11 @@
-const { app, BrowserWindow, Menu, ipcMain } = require('electron');
+﻿const { app, BrowserWindow, Menu, ipcMain } = require('electron');
 const path = require('path');
 const http = require('http');
 
 let mainWindow;
 
 function checkServerReady(retries = 30, delay = 500) {
-  const API_KEY = 'tioras-pos-secret-2026';
+  const API_KEY = 'PAVATI OS-pos-secret-2026';
   return new Promise((resolve, reject) => {
     function ping() {
       const req = http.get(

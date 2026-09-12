@@ -29,7 +29,7 @@ function generateBarcodeDataUrl(value) {
 
 export function buildThermalCreditNoteHtml(creditNote, settings = {}) {
   const storeName = settings.store_name || "PAVATI OS";
-  const tagline = settings.store_tagline || "Powered by PAVATI OS";
+  const tagline = settings.store_tagline || "PAVATI OS";
   const address = settings.store_address || "";
   const phone = settings.store_phone || "";
   const gstin = settings.store_gstin || "";

@@ -3,14 +3,14 @@ setlocal enabledelayedexpansion
 cd /d "%~dp0"
 
 echo ========================================================
-echo   MCT POS - Enterprise Retail Desktop Launcher
+echo   PAVATI OS - Enterprise Retail Desktop Launcher
 echo ========================================================
 
 :: 1. Ensure server is running on port 3000
 netstat -ano | findstr :3000 | findstr LISTENING >nul 2>&1
 if %errorlevel% neq 0 (
-    echo Starting MCT POS background server...
-    start "MCT POS Server Daemon" /min node "%~dp0server\server.js"
+    echo Starting PAVATI OS background server...
+    start "PAVATI OS Server Daemon" /min node "%~dp0server\server.js"
     
     :: Wait up to 10 seconds for port 3000 to become active
     set /a retries=0

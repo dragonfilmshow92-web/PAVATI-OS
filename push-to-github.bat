@@ -1,15 +1,15 @@
 @echo off
-title Push Tioras Fashions Studio to GitHub
+title Push PAVATI OS to GitHub
 cd /d "%~dp0"
 echo ========================================================
-echo   Pushing Tioras Fashions Studio POS to GitHub...
+echo   Pushing PAVATI OS POS to GitHub...
 echo ========================================================
 echo.
 git push origin main
 echo.
 if %errorlevel% equ 0 (
     echo ========================================================
-    echo   SUCCESS! Pushed to https://github.com/tyoras9686-ui/Tioras-Fashions-Studio
+    echo   SUCCESS! Pushed to https://github.com/dragonfilmshow92-web/PAVATI-OS
     echo ========================================================
 ) else (
     echo ========================================================

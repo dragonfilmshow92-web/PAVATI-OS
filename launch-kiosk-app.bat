@@ -3,14 +3,14 @@ setlocal enabledelayedexpansion
 cd /d "%~dp0"
 
 echo ========================================================
-echo   MCT POS - Counter Kiosk Mode
+echo   PAVATI OS - Counter Kiosk Mode
 echo ========================================================
 
 :: 1. Ensure server is running on port 3000
 netstat -ano | findstr :3000 | findstr LISTENING >nul 2>&1
 if %errorlevel% neq 0 (
-    echo Starting MCT POS background server...
-    start "MCT POS Server Daemon" /min node "%~dp0server\server.js"
+    echo Starting PAVATI OS background server...
+    start "PAVATI OS Server Daemon" /min node "%~dp0server\server.js"
     
     set /a retries=0
     :WAIT_KIOSK

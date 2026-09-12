@@ -120,7 +120,7 @@ export default function ThermalPrintModal() {
           }}
         >
           <div style={{ textAlign: 'center', borderBottom: '1px dashed #000', paddingBottom: '8px', marginBottom: '10px' }}>
-            <div style={{ fontWeight: '900', fontSize: '14px' }}>{settings.store_name || "RETAIL STUDIO"}</div>
+            <div style={{ fontWeight: '900', fontSize: '14px' }}>{settings.store_name || "PAVATI OS"}</div>
             <div style={{ fontSize: '10px' }}>STOCK INWARD / RECEIVING SLIP</div>
             <div style={{ fontSize: '10px' }}>Invoice: {data.invoiceNo || 'INV-RECEIVE'} | {data.date || new Date().toISOString().slice(0, 10)}</div>
             {data.vendor && <div style={{ fontSize: '10px' }}>Vendor: {data.vendor.name} ({data.vendor.gstin || ''})</div>}

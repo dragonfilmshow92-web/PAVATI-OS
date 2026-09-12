@@ -204,7 +204,7 @@ export default function ReceiptModal() {
                 {settings.store_name || "PAVATI OS"}
               </div>
               <div style={{ fontSize: is58 ? '8.5px' : '10px', fontWeight: 'bold' }}>
-                {settings.store_tagline || settings.tagline || "Powered by PAVATI OS"}
+                {settings.store_tagline || settings.tagline || "PAVATI OS"}
               </div>
               {settings.store_address && (
                 <div style={{ fontSize: is58 ? '8px' : '9.5px', color: '#333' }}>

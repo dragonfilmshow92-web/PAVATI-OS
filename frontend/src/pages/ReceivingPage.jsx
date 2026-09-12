@@ -310,7 +310,7 @@ export default function ReceivingPage() {
           </div>
           <div>
             <h2 className="receiving-title">Stock Receiving</h2>
-            <div className="receiving-subtitle">{settings.store_name || "RETAIL STUDIO"}</div>
+            <div className="receiving-subtitle">{settings.store_name || "PAVATI OS"}</div>
           </div>
         </div>
 

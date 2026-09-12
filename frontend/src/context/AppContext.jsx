@@ -72,7 +72,7 @@ export function AppProvider({ children }) {
   const [activeShift, setActiveShift] = useState(null);
   const [settings, setSettings] = useState({
     store_name: "PAVATI OS",
-    store_tagline: "Powered by PAVATI OS",
+    store_tagline: "Custom POS Solution",
     store_address: "",
     store_phone: "",
     store_gstin: "",
