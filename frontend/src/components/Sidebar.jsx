@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { useApp } from '../context/AppContext';
 import { 
   Globe, 
@@ -26,7 +26,7 @@ import {
 
 export default function Sidebar() {
   const { currentPage, setCurrentPage, theme, toggleTheme, sidebarOpen, toggleSidebar, closeSidebar, settings } = useApp();
-  const storeName = settings?.store_name || 'TIORAS';
+  const storeName = settings?.store_name || 'PAVATI OS';
 
   const menuSections = [
     {

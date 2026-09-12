@@ -5,8 +5,13 @@ const SupplierSchema = new mongoose.Schema({
   name: { type: String, required: true },
   contact_person: { type: String, default: '' },
   phone: { type: String, default: '' },
+  contact: { type: String, default: '' }, // alias for phone to prevent UI payload stripping
   email: { type: String, default: '' },
   address: { type: String, default: '' },
+  city: { type: String, default: '' },
+  state: { type: String, default: '' },
+  state_code: { type: String, default: '' },
+  pan: { type: String, default: '' },
   gstin: { type: String, default: '' },
   category: { type: String, default: 'general' },
   payment_terms: { type: String, default: 'Net 30' },

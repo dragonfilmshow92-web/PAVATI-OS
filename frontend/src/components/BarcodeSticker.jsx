@@ -1,9 +1,9 @@
-import React, { useEffect, useRef } from 'react';
+﻿import React, { useEffect, useRef } from 'react';
 import JsBarcode from 'jsbarcode';
 
 export default function BarcodeSticker({ 
   item, 
-  storeName = "TIORAS", 
+  storeName = "PAVATI OS", 
   showStoreName = true,
   showMRP = true,
   showSalePrice = true,
@@ -12,7 +12,7 @@ export default function BarcodeSticker({
   showRack = true,
   showSku = true,
   printBorder = false,
-  stickerSize = 'citizen-2up' // 'citizen-2up' | 'citizen' | 'citizen-1up' | 'standard' | 'compact' | 'shelf'
+  stickerSize = 'halett-6up' // 'halett-6up' | 'citizen-2up' | 'citizen' | 'citizen-1up' | 'standard' | 'compact' | 'shelf'
 }) {
   const barcodeRef = useRef(null);
 
@@ -30,7 +30,13 @@ export default function BarcodeSticker({
         let barHeight = 36;
         let fontSize = 11;
 
-        if (stickerSize === 'citizen-2up' || stickerSize === '2up') {
+        if (stickerSize === 'halett-6up' || stickerSize === 'halett') {
+          // Halett 4" x 6" 6-up sticker (~48mm x 48mm in 2x3 grid)
+          // Generous height & width for ultra-reliable scanner gun reading
+          barWidth = 1.35;
+          barHeight = 38;
+          fontSize = 11;
+        } else if (stickerSize === 'citizen-2up' || stickerSize === '2up') {
           // Compact 2-up parallel sticker (48mm x 25.4mm)
           barWidth = 1.05;
           barHeight = 22;
@@ -69,6 +75,77 @@ export default function BarcodeSticker({
 
   if (!item) return null;
 
+  // Halett 4" x 6" Label Sheet (6 Stickers per Label: 2 Columns x 3 Rows, ~48mm x 48mm each)
+  if (stickerSize === 'halett-6up' || stickerSize === 'halett') {
+    return (
+      <div className={`barcode-sticker size-halett-6up print-border-${printBorder ? 'yes' : 'no'}`}>
+        {/* Top Header: Brand Name + SKU */}
+        <div className="sticker-halett-header">
+          {showStoreName && (
+            <span className="sticker-halett-store">
+              {storeName || "PAVATI OS"}
+            </span>
+          )}
+          {showSku && item.sku && (
+            <span className="sticker-halett-sku">
+              {item.sku}
+            </span>
+          )}
+        </div>
+
+        {/* Product Title & Size */}
+        <div className="sticker-halett-title" title={item.name}>
+          {item.name} {item.size && item.size !== 'Standard' && item.size !== 'Default' ? `(${item.size})` : ''}
+        </div>
+
+        {/* Location & Stock Badges */}
+        {(showRack || showStock) && (
+          <div className="sticker-halett-meta">
+            {showRack && (item.rack_location || item.rack_name) && (
+              <span className="sticker-halett-rack">
+                📍 {item.rack_location || item.rack_name}
+              </span>
+            )}
+            {showStock && (
+              <span className="sticker-halett-stock">
+                Stock: {item.stock_qty ?? 0} {item.uom || 'Pcs'}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Pricing Matrix */}
+        {(showMRP || showSalePrice) && (
+          <div className="sticker-halett-pricing">
+            <div className="sticker-halett-price-left">
+              {showMRP && (
+                <div className="sticker-halett-mrp">
+                  MRP: <span className={hasDiscount ? 'struck' : ''}>₹{mrp.toLocaleString('en-IN')}</span>
+                </div>
+              )}
+              {hasDiscount && showDiscount && (
+                <div className="sticker-halett-discount">
+                  SAVE ₹{saveAmount} ({discountPercent}%)
+                </div>
+              )}
+            </div>
+            {showSalePrice && (
+              <div className="sticker-halett-sale">
+                <span className="sticker-halett-sale-label">SALE:</span>
+                <span className="sticker-halett-sale-val">₹{salePrice.toLocaleString('en-IN')}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Centered Barcode SVG with Monospace Text */}
+        <div className="sticker-halett-barcode-wrapper">
+          <svg ref={barcodeRef} className="sticker-halett-barcode-svg"></svg>
+        </div>
+      </div>
+    );
+  }
+
   // Citizen 2-Up Parallel Layout (Each sticker ~48mm x 25.4mm, 2 per row across 101.6mm roll)
   if (stickerSize === 'citizen-2up' || stickerSize === '2up') {
     return (
@@ -77,7 +154,7 @@ export default function BarcodeSticker({
         <div className="sticker-2up-header">
           {showStoreName && (
             <span className="sticker-2up-store">
-              {storeName || "TIORAS"}
+              {storeName || "PAVATI OS"}
             </span>
           )}
           {showSku && item.sku && (
@@ -143,7 +220,7 @@ export default function BarcodeSticker({
             <div className="sticker-header-line">
               {showStoreName && (
                 <span className="sticker-store-name-inline">
-                  {storeName || "TIORAS"}
+                  {storeName || "PAVATI OS"}
                 </span>
               )}
               {showSku && item.sku && (
@@ -208,7 +285,7 @@ export default function BarcodeSticker({
       {/* Store Header */}
       {showStoreName && (
         <div className="sticker-store-name">
-          {storeName || "TIORAS"}
+          {storeName || "PAVATI OS"}
         </div>
       )}
 

@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { api } from '../../api';
 import { X, Plus, Trash2, CheckCircle2, Truck } from 'lucide-react';
+import soundFx from '../../utils/sounds';
 
 export default function ReceivingModal() {
   const { setModalState, suppliers, items, refreshItems, refreshGRN, showToast, setCurrentPage } = useApp();
@@ -99,6 +100,7 @@ export default function ReceivingModal() {
         notes: notes
       });
 
+      soundFx.stockReceived(); // 📦 Stock received confirmation fanfare
       showToast(`Inward completed! Added ${totalUnits} items to inventory.`, "success");
       await refreshItems();
       await refreshGRN();

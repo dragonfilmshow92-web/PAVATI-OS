@@ -10,8 +10,10 @@ export default function SupplierModal() {
   const [formData, setFormData] = useState({
     name: '',
     contact: '',
+    phone: '',
     email: '',
     gstin: '',
+    state: 'Maharashtra',
     category: 'Shirts & Trousers'
   });
   const [saving, setSaving] = useState(false);
@@ -20,9 +22,11 @@ export default function SupplierModal() {
     if (editingSup) {
       setFormData({
         name: editingSup.name || '',
-        contact: editingSup.contact || '',
+        contact: editingSup.phone || editingSup.contact || '',
+        phone: editingSup.phone || editingSup.contact || '',
         email: editingSup.email || '',
         gstin: editingSup.gstin || '',
+        state: editingSup.state || 'Maharashtra',
         category: editingSup.category || 'General Retail'
       });
     }
@@ -30,7 +34,11 @@ export default function SupplierModal() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => ({ 
+      ...prev, 
+      [name]: value,
+      ...(name === 'contact' ? { phone: value } : {})
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -42,11 +50,16 @@ export default function SupplierModal() {
 
     setSaving(true);
     try {
+      const payload = {
+        ...formData,
+        phone: formData.phone || formData.contact,
+        contact: formData.contact || formData.phone
+      };
       if (editingSup) {
-        await api.updateSupplier(editingSup.id, formData);
+        await api.updateSupplier(editingSup.id, payload);
         showToast("Vendor updated successfully", "success");
       } else {
-        await api.createSupplier(formData);
+        await api.createSupplier(payload);
         showToast("New supplier registered", "success");
       }
       await refreshSuppliers();
@@ -134,6 +147,18 @@ export default function SupplierModal() {
                   placeholder="Shirts, Fabrics, Accessories" 
                 />
               </div>
+            </div>
+
+            <div className="form-group">
+              <label>Vendor State / Operating Region</label>
+              <input 
+                type="text" 
+                name="state" 
+                className="form-control" 
+                value={formData.state} 
+                onChange={handleChange} 
+                placeholder="e.g. Maharashtra, Gujarat, Delhi" 
+              />
             </div>
           </div>
 

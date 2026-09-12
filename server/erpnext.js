@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ERPNext / Frappe REST API Two-Way Connector
  * Seamless integration for Items, Stock, Sales Invoices, Customers & Suppliers
  */
@@ -12,7 +12,7 @@ class ERPNextClient {
     this.url = (config.url || 'http://localhost:8000').replace(/\/$/, '');
     this.apiKey = config.api_key || '';
     this.apiSecret = config.api_secret || '';
-    this.company = config.company || 'Tioras Fashion Studio';
+    this.company = config.company || 'PAVATI OS STUDIO';
     this.warehouse = config.warehouse || 'Stores - TFS';
     this.posProfile = config.pos_profile || 'Standard POS';
     this.enabled = Boolean(config.enabled);

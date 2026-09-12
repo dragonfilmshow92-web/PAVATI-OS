@@ -1,7 +1,8 @@
-import React, { useState, useRef } from 'react';
+﻿import React, { useState, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { api } from '../api';
 import BarcodeSticker from '../components/BarcodeSticker';
+import soundFx from '../utils/sounds';
 import { 
   Barcode, 
   Printer, 
@@ -25,8 +26,8 @@ export default function BarcodePage() {
   const [selectedItems, setSelectedItems] = useState(items.map(i => i.id));
   const [stickerCopies, setStickerCopies] = useState(2);
   const [stickerSize, setStickerSize] = useState(() => {
-    return localStorage.getItem('pos_barcode_sticker_size') || 'citizen-2up';
-  }); // 'citizen-2up' | 'citizen-1up' | 'standard' | 'compact' | 'shelf'
+    return localStorage.getItem('pos_barcode_sticker_size') || 'halett-6up';
+  }); // 'halett-6up' | 'citizen-2up' | 'citizen-1up' | 'standard' | 'compact' | 'shelf'
   const [printBorder, setPrintBorder] = useState(() => {
     return localStorage.getItem('pos_barcode_print_border') === 'true';
   });
@@ -119,11 +120,12 @@ export default function BarcodePage() {
     }
 
     if (matched) {
-      playBeep();
+      soundFx.barcodeScan();
       setScanResult(matched);
       showToast(`⚡ Barcode Verified: ${matched.name} (₹${matched.selling_price})`, 'success');
       setTestScanInput('');
     } else {
+      soundFx.error();
       setScanResult(null);
       showToast(`⚠️ No product found for barcode: "${clean}"`, 'warning');
     }
@@ -234,11 +236,19 @@ export default function BarcodePage() {
               <div style={{ display: 'flex', gap: '4px', background: 'var(--bg-card)', padding: '3px', borderRadius: '6px', border: '1px solid var(--border-color)', flexWrap: 'wrap' }}>
                 <button
                   type="button"
+                  className={`btn btn-sm ${stickerSize === 'halett-6up' || stickerSize === 'halett' ? 'btn-primary' : 'btn-secondary'}`}
+                  onClick={() => handleSetStickerSize('halett-6up')}
+                  style={{ padding: '4px 12px', fontSize: '12px', fontWeight: '800' }}
+                >
+                  🖨️ Halett 4×6" (6-in-1: 2×3 Grid)
+                </button>
+                <button
+                  type="button"
                   className={`btn btn-sm ${stickerSize === 'citizen-2up' ? 'btn-primary' : 'btn-secondary'}`}
                   onClick={() => handleSetStickerSize('citizen-2up')}
                   style={{ padding: '3px 10px', fontSize: '12px', fontWeight: '700' }}
                 >
-                  🖨️ Citizen 2-Up (2 Parallel: 50×25.4mm)
+                  🖨️ Citizen 2-Up (50×25.4mm)
                 </button>
                 <button
                   type="button"
@@ -246,7 +256,7 @@ export default function BarcodePage() {
                   onClick={() => handleSetStickerSize('citizen-1up')}
                   style={{ padding: '3px 10px', fontSize: '12px' }}
                 >
-                  🏷️ Citizen 1-Up (Single: 101.6×25.4mm)
+                  🏷️ Citizen 1-Up (101.6×25.4mm)
                 </button>
                 <button
                   type="button"
@@ -280,6 +290,39 @@ export default function BarcodePage() {
               <button className="btn btn-secondary btn-sm" onClick={clearSelection}>Clear</button>
             </div>
           </div>
+
+          {/* Halett 4x6" 6-in-1 Sheet Guide Banner */}
+          {(stickerSize === 'halett-6up' || stickerSize === 'halett') && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px',
+              padding: '10px 16px',
+              borderRadius: '8px',
+              background: 'rgba(59, 130, 246, 0.08)',
+              border: '1px solid rgba(59, 130, 246, 0.3)',
+              fontSize: '12px',
+              color: 'var(--text-primary)',
+              flexWrap: 'wrap'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '20px' }}>🏷️</span>
+                <div>
+                  <strong style={{ color: 'var(--accent-blue)', fontSize: '13px' }}>Halett 4" × 6" Thermal Label (6 Stickers per Sheet) Active:</strong>
+                  <div style={{ color: 'var(--text-secondary)', marginTop: '2px', fontSize: '12px' }}>
+                    Sheet: <strong>4" Width × 6" Height (101.6 × 152.4 mm)</strong> with <strong>6 Stickers in a 2×3 Grid</strong> (~2" × 2" / ~48×48mm each).
+                  </div>
+                </div>
+              </div>
+              <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
+                <span>Printer: <strong style={{ color: 'var(--text-primary)' }}>Halett Thermal</strong></span>
+                <span>Chrome Paper Size: <strong style={{ color: 'var(--accent-blue)' }}>4×6 in (100×150mm)</strong></span>
+                <span>Layout: <strong style={{ color: 'var(--accent-emerald)' }}>2 Cols × 3 Rows</strong></span>
+                <span>Margins: <strong style={{ color: 'var(--accent-emerald)' }}>None (0mm)</strong></span>
+              </div>
+            </div>
+          )}
 
           {/* Citizen CL-E321 2-Up Parallel Roll Guide */}
           {stickerSize === 'citizen-2up' && (
@@ -350,7 +393,7 @@ export default function BarcodePage() {
 
             <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
               <input type="checkbox" checked={showStoreName} onChange={e => setShowStoreName(e.target.checked)} />
-              Store Name ({settings.store_name || "TIORAS"})
+              Store Name ({settings.store_name || "PAVATI OS"})
             </label>
 
             <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: '700', color: 'var(--accent-purple, #a855f7)', cursor: 'pointer' }}>
@@ -558,11 +601,12 @@ export default function BarcodePage() {
         )}
       </div>
 
-      {/* Dynamic @page media rules for Citizen CL-E321 and other label sizes */}
+      {/* Dynamic @page media rules for Halett 4x6", Citizen CL-E321 and other label sizes */}
       <style>{`
         @media print {
           @page {
             size: ${
+              stickerSize === 'halett-6up' || stickerSize === 'halett' ? '4in 6in' :
               stickerSize.startsWith('citizen') ? '101.6mm 25.4mm' :
               stickerSize === 'standard' ? '50mm 30mm' :
               stickerSize === 'compact' ? '38mm 25mm' :
@@ -572,6 +616,7 @@ export default function BarcodePage() {
           }
           .printable-area {
             width: ${
+              stickerSize === 'halett-6up' || stickerSize === 'halett' ? '4in' :
               stickerSize.startsWith('citizen') ? '101.6mm' :
               stickerSize === 'standard' ? '50mm' :
               stickerSize === 'compact' ? '38mm' :
@@ -586,16 +631,19 @@ export default function BarcodePage() {
         className="printable-area" 
         style={{ 
           display: 'grid', 
-          gridTemplateColumns: stickerSize.startsWith('citizen')
-            ? 'repeat(auto-fill, minmax(min(100%, 390px), 1fr))'
-            : (stickerSize === 'compact' 
-              ? 'repeat(auto-fill, minmax(min(100%, 180px), 1fr))' 
-              : (stickerSize === 'shelf' ? 'repeat(auto-fill, minmax(min(100%, 270px), 1fr))' : 'repeat(auto-fill, minmax(min(100%, 230px), 1fr))')), 
-          gap: '12px', 
+          gridTemplateColumns: (stickerSize === 'halett-6up' || stickerSize === 'halett')
+            ? 'repeat(auto-fill, minmax(min(100%, 360px), 1fr))'
+            : (stickerSize.startsWith('citizen')
+              ? 'repeat(auto-fill, minmax(min(100%, 390px), 1fr))'
+              : (stickerSize === 'compact' 
+                ? 'repeat(auto-fill, minmax(min(100%, 180px), 1fr))' 
+                : (stickerSize === 'shelf' ? 'repeat(auto-fill, minmax(min(100%, 270px), 1fr))' : 'repeat(auto-fill, minmax(min(100%, 230px), 1fr))'))), 
+          gap: '16px', 
           background: 'var(--bg-card)', 
           padding: '16px', 
           borderRadius: 'var(--radius-md)',
-          border: '1px solid var(--border-color)' 
+          border: '1px solid var(--border-color)',
+          justifyItems: (stickerSize === 'halett-6up' || stickerSize === 'halett') ? 'center' : 'stretch'
         }}
       >
         {(() => {
@@ -608,6 +656,48 @@ export default function BarcodePage() {
               allStickers.push({ item, copyIdx });
             }
           });
+
+          // Halett 4" x 6" Mode: 6 stickers per sheet (2 columns x 3 rows = 6 stickers)
+          if (stickerSize === 'halett-6up' || stickerSize === 'halett') {
+            const sheets6up = [];
+            for (let i = 0; i < allStickers.length; i += 6) {
+              const chunk = allStickers.slice(i, i + 6);
+              while (chunk.length < 6) {
+                chunk.push(null);
+              }
+              sheets6up.push(chunk);
+            }
+
+            return sheets6up.map((sheet, sheetIdx) => (
+              <div key={sheetIdx} className="halett-6up-sheet-wrapper">
+                <div className="halett-sheet-badge no-print">
+                  📄 Halett 4"×6" Sheet {sheetIdx + 1} of {sheets6up.length} (6 Labels)
+                </div>
+                <div className="halett-6up-sheet">
+                  {sheet.map((entry, idx) => (
+                    entry ? (
+                      <BarcodeSticker 
+                        key={`halett-${sheetIdx}-${idx}-${entry.item.id}-${entry.copyIdx}`}
+                        item={entry.item}
+                        storeName={settings.store_name || "PAVATI OS"}
+                        showStoreName={showStoreName}
+                        showMRP={showMRP}
+                        showSalePrice={showSalePrice}
+                        showDiscount={showDiscount}
+                        showStock={showStock}
+                        showRack={showRack}
+                        showSku={showSku}
+                        printBorder={printBorder}
+                        stickerSize="halett-6up"
+                      />
+                    ) : (
+                      <div key={`blank-${sheetIdx}-${idx}`} className="barcode-sticker size-halett-6up blank-sticker" />
+                    )
+                  ))}
+                </div>
+              </div>
+            ));
+          }
 
           // Citizen 2-Up Mode: Group into pairs of 2 parallel stickers per 101.6mm x 25.4mm row
           if (stickerSize === 'citizen-2up') {
@@ -622,7 +712,7 @@ export default function BarcodePage() {
                 <BarcodeSticker 
                   key={`left-${pair[0].item.id}-${pair[0].copyIdx}`}
                   item={pair[0].item}
-                  storeName={settings.store_name || "TIORAS"}
+                  storeName={settings.store_name || "PAVATI OS"}
                   showStoreName={showStoreName}
                   showMRP={showMRP}
                   showSalePrice={showSalePrice}
@@ -638,7 +728,7 @@ export default function BarcodePage() {
                   <BarcodeSticker 
                     key={`right-${pair[1].item.id}-${pair[1].copyIdx}`}
                     item={pair[1].item}
-                    storeName={settings.store_name || "TIORAS"}
+                    storeName={settings.store_name || "PAVATI OS"}
                     showStoreName={showStoreName}
                     showMRP={showMRP}
                     showSalePrice={showSalePrice}
@@ -661,7 +751,7 @@ export default function BarcodePage() {
             <BarcodeSticker 
               key={`${item.id}-${copyIdx}`}
               item={item}
-              storeName={settings.store_name || "TIORAS"}
+              storeName={settings.store_name || "PAVATI OS"}
               showStoreName={showStoreName}
               showMRP={showMRP}
               showSalePrice={showSalePrice}

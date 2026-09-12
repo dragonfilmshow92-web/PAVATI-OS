@@ -1,6 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+﻿import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { api } from '../api';
+import soundFx from '../utils/sounds';
 import { 
   Scan, 
   Search, 
@@ -13,17 +14,25 @@ import {
   Home,
   FolderOpen,
   List,
+  LayoutGrid,
   Store,
   Check,
   Info,
   Barcode,
   ShoppingBag,
-  Tag
+  Tag,
+  Sparkles,
+  Zap,
+  RotateCcw,
+  X,
+  CreditCard,
+  Percent
 } from 'lucide-react';
 
 export default function PosPage() {
   const { 
     items, 
+    categories,
     cart, 
     addToCart, 
     updateCartQty, 
@@ -32,12 +41,12 @@ export default function PosPage() {
     cartTotals, 
     appliedCoupon,
     applyCoupon,
-    removeCoupon,
+    removeCoupon, 
     cartCustomer, 
     setCartCustomer, 
     customers, 
     heldCarts,
-    holdCart,
+    holdCart, 
     setModalState, 
     showToast,
     setCurrentPage,
@@ -47,14 +56,14 @@ export default function PosPage() {
   const [barcodeInput, setBarcodeInput] = useState('');
   const [customerSearchInput, setCustomerSearchInput] = useState('');
   const [productSearchInput, setProductSearchInput] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'list'
   const [activeRowIndex, setActiveRowIndex] = useState(null);
   const [activePromos, setActivePromos] = useState([]);
   const [couponInput, setCouponInput] = useState('');
   const [applyingCoupon, setApplyingCoupon] = useState(false);
 
   const barcodeInputRef = useRef(null);
-
-  const [showAllItems, setShowAllItems] = useState(false);
 
   // Load active coupons for quick selection chips
   useEffect(() => {
@@ -69,6 +78,24 @@ export default function PosPage() {
   useEffect(() => {
     barcodeInputRef.current?.focus();
   }, []);
+
+  // Keyboard shortcut listener for POS: F8 (Customer), F12 (Submit)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'F8') {
+        e.preventDefault();
+        setModalState({ type: 'quickCustomer', data: null });
+      } else if (e.key === 'F12' && cart.length > 0) {
+        e.preventDefault();
+        setModalState({ type: 'payment', data: null });
+      } else if (e.key === 'Escape') {
+        setBarcodeInput('');
+        setProductSearchInput('');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [cart.length, setModalState]);
 
   // Handle barcode scanner gun (presses Enter upon scan)
   const handleBarcodeSubmit = (e) => {
@@ -91,12 +118,15 @@ export default function PosPage() {
     });
 
     if (matched) {
-      addToCart(matched, 1);
+      soundFx.barcodeScan();
+      addToCart(matched, 1, false);
       setBarcodeInput('');
       setProductSearchInput('');
       setActiveRowIndex(cart.length); // highlight newly added
+      showToast ? showToast(`Added: ${matched.name}`, 'success') : null;
     } else {
-      showToast(`No item found matching: ${raw}`, 'warning');
+      soundFx.error();
+      showToast ? showToast(`No item found matching: ${raw}`, 'warning') : alert(`No item found matching: ${raw}`);
     }
   };
 
@@ -117,41 +147,58 @@ export default function PosPage() {
     if (matched) {
       setCartCustomer(matched);
       setCustomerSearchInput('');
-      showToast(`Attached customer: ${matched.name}`, 'success');
+      showToast ? showToast(`Attached customer: ${matched.name}`, 'success') : null;
     } else {
       setModalState({ type: 'quickCustomer', data: { prefill: customerSearchInput } });
     }
   };
 
-  // Products filter for right panel
-  const searchFilter = (productSearchInput || barcodeInput).toLowerCase().trim();
-  const searchResults = searchFilter 
-    ? (items || []).filter(item => 
-        String(item.name || '').toLowerCase().includes(searchFilter) ||
-        String(item.barcode || '').includes(searchFilter) ||
-        String(item.sku || '').toLowerCase().includes(searchFilter) ||
-        (item.category && String(item.category).toLowerCase().includes(searchFilter))
-      ) 
-    : (showAllItems ? (items || []) : []);
+  // Dynamic Categories List from DB + Built-in Fallbacks
+  const categoryList = useMemo(() => {
+    const fromDb = (categories || []).map(c => typeof c === 'object' ? c.name : c).filter(Boolean);
+    const fromItems = Array.from(new Set((items || []).map(i => i.category).filter(Boolean)));
+    const merged = Array.from(new Set([...fromDb, ...fromItems]));
+    return merged.length > 0 ? merged : ['Shirts', 'Kurtis', 'Dresses', 'Accessories', 'Fabrics'];
+  }, [categories, items]);
+
+  // Filtered Products for Showcase Panel
+  const filteredProducts = useMemo(() => {
+    let list = items || [];
+    // 1. Category Filter
+    if (selectedCategory !== 'ALL') {
+      list = list.filter(i => String(i.category || '').toLowerCase() === selectedCategory.toLowerCase());
+    }
+    // 2. Search query filter
+    const query = (productSearchInput || barcodeInput).trim().toLowerCase();
+    if (query) {
+      list = list.filter(i => 
+        String(i.name || '').toLowerCase().includes(query) ||
+        String(i.barcode || '').toLowerCase().includes(query) ||
+        String(i.sku || '').toLowerCase().includes(query) ||
+        String(i.category || '').toLowerCase().includes(query)
+      );
+    }
+    return list;
+  }, [items, selectedCategory, productSearchInput, barcodeInput]);
 
   return (
     <div className="posbranch-wrapper">
-      {/* ─── TOP HEADER (Matching Screenshot 1) ─── */}
+      {/* ─── TOP HEADER / COMMAND BAR ─── */}
       <header className="posbranch-header">
         {/* Brand identity */}
         <div className="posbranch-brand" onClick={() => setCurrentPage('dashboard')} title="Click to open Dashboard">
           <div className="posbranch-brand-icon">
-            <Store size={22} color="#ffffff" />
+            <Store size={20} color="#ffffff" />
           </div>
           <div>
-            <div className="posbranch-brand-title">{settings.store_name || "RETAIL SUITE"}</div>
-            <div className="posbranch-brand-sub">POINT OF SALE</div>
+            <div className="posbranch-brand-title">{settings?.store_name || "PAVATI OS"}</div>
+            <div className="posbranch-brand-sub">POINT OF SALE · TERMINAL #01</div>
           </div>
         </div>
 
         {/* Dual Search Area in Top Bar */}
         <div className="posbranch-search-group">
-          {/* 1. Barcode / Product Search */}
+          {/* 1. Barcode / Product Search Gun Input */}
           <form onSubmit={handleBarcodeSubmit} className="posbranch-search-box">
             <div className="search-input-prefix">
               <Barcode size={18} color="var(--accent-emerald)" />
@@ -160,31 +207,40 @@ export default function PosPage() {
               ref={barcodeInputRef}
               type="text" 
               className="posbranch-input" 
-              placeholder="Scan or search" 
+              placeholder="Scan Barcode (Gun) or search product..." 
               value={barcodeInput} 
               onChange={e => {
                 setBarcodeInput(e.target.value);
                 setProductSearchInput(e.target.value);
               }} 
             />
-            <button type="submit" className="posbranch-search-btn" title="Search Product">
-              <Search size={16} />
+            {barcodeInput && (
+              <button 
+                type="button" 
+                className="search-clear-btn" 
+                onClick={() => { setBarcodeInput(''); setProductSearchInput(''); }}
+              >
+                <X size={14} />
+              </button>
+            )}
+            <button type="submit" className="posbranch-search-btn" title="Add Item (Enter)">
+              <Plus size={16} />
             </button>
           </form>
 
-          {/* 2. Customer Name or Mobile Search */}
-          <form onSubmit={handleCustomerSearch} className="posbranch-search-box">
+          {/* 2. Customer Selector / Quick Search */}
+          <form onSubmit={handleCustomerSearch} className="posbranch-search-box customer-search-box">
             <div className="search-input-prefix">
               <User size={18} color="#94a3b8" />
             </div>
             <input 
               type="text" 
               className="posbranch-input" 
-              placeholder="Customer name or mobile" 
+              placeholder="Customer phone or name [F8]..." 
               value={customerSearchInput} 
               onChange={e => setCustomerSearchInput(e.target.value)} 
             />
-            <button type="submit" className="posbranch-search-btn" title="Search Customer">
+            <button type="submit" className="posbranch-search-btn customer-btn" title="Search or Register Customer">
               <Search size={16} />
             </button>
           </form>
@@ -196,14 +252,21 @@ export default function PosPage() {
             <button 
               className="customer-status-pill customer-active"
               onClick={() => setModalState({ type: 'quickCustomer', data: null })}
-              title="Change customer"
+              title="Customer linked to sale. Click to edit."
             >
-              <User size={14} />
-              <span>{cartCustomer.name}</span>
+              <span className="customer-avatar-dot">
+                {cartCustomer.name.slice(0, 1).toUpperCase()}
+              </span>
+              <div style={{ textAlign: 'left', lineHeight: '1.2' }}>
+                <span className="customer-name-label">{cartCustomer.name}</span>
+                {cartCustomer.phone && (
+                  <span className="customer-phone-sub">{cartCustomer.phone}</span>
+                )}
+              </div>
               <span 
                 className="customer-clear-x" 
                 onClick={(e) => { e.stopPropagation(); setCartCustomer(null); }}
-                title="Remove customer from bill"
+                title="Remove customer from sale"
               >
                 ×
               </span>
@@ -212,35 +275,32 @@ export default function PosPage() {
             <button 
               className="customer-status-pill customer-none"
               onClick={() => setModalState({ type: 'quickCustomer', data: null })}
-              title="Click to select or register customer"
+              title="Click to attach or register customer [F8]"
             >
               <UserX size={14} />
-              <span>No customer</span>
+              <span>Walk-in Customer</span>
+              <span className="customer-kbd-hint">F8</span>
             </button>
           )}
         </div>
       </header>
 
-      {/* ─── MAIN VIEWPORT (2 COLUMNS: CART TABLE & PRODUCTS) ─── */}
+      {/* ─── MAIN VIEWPORT: 2 COLUMNS (CART BILLING & PRODUCT SHOWCASE) ─── */}
       <div className="posbranch-main-area">
-        {/* Left: Cart / Current Bill Table */}
+        {/* Left Pane: Current Bill / Cart Table */}
         <div className="posbranch-cart-pane">
           <div className="posbranch-table-container">
             <table className="posbranch-table">
               <thead>
                 <tr>
-                  <th style={{ width: '40px' }}>#</th>
-                  <th>PRODUCT</th>
-                  <th style={{ width: '90px' }}>GST%</th>
-                  <th style={{ width: '90px' }}>PRICE</th>
-                  <th style={{ width: '80px' }}>DISC%</th>
-                  <th style={{ width: '110px' }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                      QUANTITY <Info size={12} color="var(--text-muted)" />
-                    </span>
-                  </th>
-                  <th style={{ width: '100px', textAlign: 'right' }}>TOTAL</th>
-                  <th style={{ width: '50px', textAlign: 'center' }}></th>
+                  <th style={{ width: '38px', textAlign: 'center' }}>#</th>
+                  <th>PRODUCT DESCRIPTION</th>
+                  <th style={{ width: '85px', textAlign: 'center' }}>GST%</th>
+                  <th style={{ width: '95px', textAlign: 'right' }}>RATE</th>
+                  <th style={{ width: '80px', textAlign: 'center' }}>DISC%</th>
+                  <th style={{ width: '120px', textAlign: 'center' }}>QUANTITY</th>
+                  <th style={{ width: '105px', textAlign: 'right' }}>TOTAL</th>
+                  <th style={{ width: '45px', textAlign: 'center' }}></th>
                 </tr>
               </thead>
               <tbody>
@@ -248,10 +308,17 @@ export default function PosPage() {
                   <tr>
                     <td colSpan="8" className="posbranch-table-empty">
                       <div className="empty-cart-prompt">
-                        <Scan size={38} color="#94a3b8" style={{ marginBottom: '8px', opacity: 0.5 }} />
-                        <div style={{ fontSize: '14px', fontWeight: '700' }}>Active bill is empty</div>
-                        <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                          Scan a barcode with the scanner gun or search for an item above
+                        <div className="empty-cart-halo">
+                          <Scan size={36} color="var(--accent-indigo)" />
+                        </div>
+                        <div className="empty-cart-title">Cart is ready for items</div>
+                        <div className="empty-cart-sub">
+                          Scan barcode with gun, or click any product tile on the right to add
+                        </div>
+                        <div className="empty-cart-shortcuts">
+                          <span className="shortcut-chip"><kbd>Enter</kbd> Scan</span>
+                          <span className="shortcut-chip"><kbd>F8</kbd> Customer</span>
+                          <span className="shortcut-chip"><kbd>F12</kbd> Pay</span>
                         </div>
                       </div>
                     </td>
@@ -262,28 +329,37 @@ export default function PosPage() {
                     return (
                       <tr 
                         key={item.id} 
-                        className={isActive ? 'row-active' : ''}
+                        className={`cart-table-row ${isActive ? 'row-active' : ''}`}
                         onClick={() => setActiveRowIndex(idx)}
                       >
                         {/* Index */}
                         <td className="row-index">{idx + 1}</td>
 
-                        {/* Product with orange badge */}
+                        {/* Product info with HSN badge */}
                         <td className="row-product">
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div className="product-title-row">
                             <span className="product-name">{item.name}</span>
-                            <span className="product-badge-dot" title="Standard Retail Item"></span>
+                            {item.hsn_code && (
+                              <span className="hsn-mini-tag" title="HSN / SAC Code">HSN:{item.hsn_code}</span>
+                            )}
                           </div>
+                          {item.barcode && (
+                            <div className="product-barcode-sub">
+                              {item.barcode} {item.sku ? `· ${item.sku}` : ''}
+                            </div>
+                          )}
                         </td>
 
                         {/* GST % */}
                         <td className="row-gst">
-                          {(item.gst_rate || 18).toFixed(2)}
+                          <span className="gst-rate-pill">
+                            {(item.gst_rate || 12)}%
+                          </span>
                         </td>
 
                         {/* Price */}
                         <td className="row-price">
-                          {(item.selling_price || 0).toFixed(2)}
+                          ₹{Number(item.selling_price || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                         </td>
 
                         {/* Disc % */}
@@ -296,17 +372,20 @@ export default function PosPage() {
                             value={item.discount_percent || 0}
                             onChange={e => updateCartLineDiscount(item.id, e.target.value)}
                             onClick={e => e.stopPropagation()}
+                            title="Line Discount %"
                           />
                         </td>
 
-                        {/* Quantity Stepper / Box */}
+                        {/* Quantity Stepper */}
                         <td className="row-qty">
                           <div className="qty-control-box">
                             <button 
+                              type="button"
                               className="qty-btn"
                               onClick={(e) => { e.stopPropagation(); updateCartQty(item.id, -1); }}
+                              title="Decrease Qty"
                             >
-                              <Minus size={11} />
+                              <Minus size={12} />
                             </button>
                             <input 
                               type="number" 
@@ -321,27 +400,30 @@ export default function PosPage() {
                               onClick={e => e.stopPropagation()}
                             />
                             <button 
+                              type="button"
                               className="qty-btn"
                               onClick={(e) => { e.stopPropagation(); updateCartQty(item.id, 1); }}
+                              title="Increase Qty"
                             >
-                              <Plus size={11} />
+                              <Plus size={12} />
                             </button>
                           </div>
                         </td>
 
-                        {/* Total */}
+                        {/* Line Total */}
                         <td className="row-total">
-                          {Number(item.subtotal || 0).toFixed(2)}
+                          ₹{Number(item.subtotal || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                         </td>
 
-                        {/* Action Trashcan */}
+                        {/* Action Trash */}
                         <td className="row-action">
                           <button 
+                            type="button"
                             className="row-delete-btn"
                             onClick={(e) => { e.stopPropagation(); removeFromCart(item.id); }}
-                            title="Remove item"
+                            title="Remove line item"
                           >
-                            <Trash2 size={15} />
+                            <Trash2 size={14} />
                           </button>
                         </td>
                       </tr>
@@ -352,49 +434,19 @@ export default function PosPage() {
             </table>
           </div>
 
-          {/* Coupon & Promo Discount Bar */}
-          <div className="posbranch-coupon-bar" style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '10px 16px',
-            background: 'var(--bg-surface)',
-            borderTop: '1px solid var(--border-color)',
-            gap: '12px',
-            flexWrap: 'wrap'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: '240px' }}>
+          {/* Coupon & Promotional Discount Strip */}
+          <div className="posbranch-coupon-bar">
+            <div className="coupon-bar-left">
               <Tag size={15} color="var(--accent-purple)" />
-              <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)' }}>
-                Promo / Coupon:
-              </span>
+              <span className="coupon-bar-label">Store Coupon:</span>
               {appliedCoupon ? (
-                <div style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  background: 'rgba(16, 185, 129, 0.12)',
-                  border: '1px solid rgba(16, 185, 129, 0.3)',
-                  padding: '3px 10px',
-                  borderRadius: '20px',
-                  fontSize: '12px',
-                  fontWeight: '800',
-                  color: 'var(--accent-emerald)'
-                }}>
+                <div className="applied-coupon-pill">
                   <span>✓ {appliedCoupon.code}</span>
-                  <span style={{ color: 'var(--text-primary)', fontWeight: '700' }}>(-₹{cartTotals.couponDiscount})</span>
+                  <span className="coupon-saved-val">(-₹{cartTotals.couponDiscount})</span>
                   <button
+                    type="button"
                     onClick={removeCoupon}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: 'var(--accent-red)',
-                      cursor: 'pointer',
-                      padding: '0 2px',
-                      fontSize: '14px',
-                      fontWeight: '900',
-                      lineHeight: 1
-                    }}
+                    className="coupon-remove-btn"
                     title="Remove coupon"
                   >
                     ×
@@ -410,31 +462,19 @@ export default function PosPage() {
                     setApplyingCoupon(false);
                     setCouponInput('');
                   }}
-                  style={{ display: 'flex', gap: '6px', alignItems: 'center' }}
+                  className="coupon-apply-form"
                 >
                   <input
                     type="text"
-                    placeholder="Enter CODE"
+                    placeholder="PROMO CODE"
                     value={couponInput}
                     onChange={e => setCouponInput(e.target.value.toUpperCase())}
-                    style={{
-                      height: '28px',
-                      padding: '2px 8px',
-                      fontSize: '12px',
-                      borderRadius: '6px',
-                      border: '1px solid var(--border-color)',
-                      background: 'var(--bg-input)',
-                      color: 'var(--text-primary)',
-                      fontFamily: 'var(--font-mono)',
-                      width: '120px',
-                      textTransform: 'uppercase'
-                    }}
+                    className="coupon-code-input"
                   />
                   <button
                     type="submit"
-                    className="btn btn-sm btn-primary"
+                    className="btn btn-sm btn-primary coupon-submit-btn"
                     disabled={applyingCoupon || cart.length === 0}
-                    style={{ height: '28px', padding: '0 10px', fontSize: '11px', fontWeight: '800' }}
                   >
                     {applyingCoupon ? '...' : 'Apply'}
                   </button>
@@ -442,28 +482,18 @@ export default function PosPage() {
               )}
             </div>
 
-            {/* Quick Promo Pills */}
+            {/* Quick Active Offers Chips */}
             {!appliedCoupon && activePromos.length > 0 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflowX: 'auto', maxWidth: '300px' }}>
-                <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>Offers:</span>
+              <div className="promo-chips-container">
+                <span className="promo-hint-label">Quick Offers:</span>
                 {activePromos.slice(0, 3).map(p => (
                   <button
                     key={p.id || p.code}
                     type="button"
                     onClick={() => applyCoupon(p.code)}
                     disabled={cart.length === 0}
-                    style={{
-                      background: 'var(--bg-card)',
-                      border: '1px dashed var(--accent-purple)',
-                      borderRadius: '4px',
-                      padding: '2px 6px',
-                      fontSize: '11px',
-                      fontWeight: '700',
-                      color: 'var(--accent-purple)',
-                      cursor: cart.length === 0 ? 'not-allowed' : 'pointer',
-                      whiteSpace: 'nowrap'
-                    }}
-                    title={`Click to apply ${p.code} (${p.type === 'percent' ? p.value + '%' : '₹' + p.value} off)`}
+                    className="promo-chip-btn"
+                    title={`Click to apply coupon ${p.code}`}
                   >
                     {p.code}
                   </button>
@@ -473,119 +503,233 @@ export default function PosPage() {
           </div>
         </div>
 
-        {/* Right: Products Sidebar Panel */}
+        {/* Right Pane: Live Product Showcase & Category Ribbon */}
         <div className="posbranch-products-pane">
-          <div className="products-pane-tab">
-            <ShoppingBag size={16} color="#6366f1" />
-            <span>Products</span>
+          {/* Header with Title & View Mode Toggle */}
+          <div className="products-pane-header">
+            <div className="products-pane-title-group">
+              <ShoppingBag size={17} color="var(--accent-indigo)" />
+              <span className="products-pane-heading">Product Catalog</span>
+              <span className="products-count-badge">{filteredProducts.length} items</span>
+            </div>
+            <div className="view-mode-toggle">
+              <button 
+                type="button"
+                className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`}
+                onClick={() => setViewMode('grid')}
+                title="Grid Card View"
+              >
+                <LayoutGrid size={15} />
+              </button>
+              <button 
+                type="button"
+                className={`view-btn ${viewMode === 'list' ? 'active' : ''}`}
+                onClick={() => setViewMode('list')}
+                title="Compact List View"
+              >
+                <List size={15} />
+              </button>
+            </div>
           </div>
 
+          {/* Interactive Category Ribbon / Pills with Distinct Jewel Tones */}
+          <div className="category-pills-ribbon">
+            <button
+              type="button"
+              className={`cat-pill ${selectedCategory === 'ALL' ? 'cat-pill-active' : ''}`}
+              style={selectedCategory === 'ALL' ? 
+                { background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', color: '#ffffff', borderColor: 'transparent', boxShadow: '0 4px 14px rgba(99, 102, 241, 0.45)' } :
+                { background: 'rgba(99, 102, 241, 0.12)', color: '#a5b4fc', border: '1px solid rgba(99, 102, 241, 0.28)' }
+              }
+              onClick={() => setSelectedCategory('ALL')}
+            >
+              All Items ({items.length})
+            </button>
+            {categoryList.map(catName => {
+              const count = (items || []).filter(i => String(i.category || '').toLowerCase() === catName.toLowerCase()).length;
+              const isActive = selectedCategory.toLowerCase() === catName.toLowerCase();
+              const c = catName.toLowerCase();
+              
+              let styleObj;
+              if (isActive) {
+                if (c.includes('shirt')) styleObj = { background: 'linear-gradient(135deg, #0284c7 0%, #06b6d4 100%)', color: '#ffffff', borderColor: 'transparent', boxShadow: '0 4px 14px rgba(6, 182, 212, 0.45)' };
+                else if (c.includes('trouser') || c.includes('pant') || c.includes('jean')) styleObj = { background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)', color: '#ffffff', borderColor: 'transparent', boxShadow: '0 4px 14px rgba(16, 185, 129, 0.45)' };
+                else if (c.includes('kurti') || c.includes('dress') || c.includes('ethnic') || c.includes('saree')) styleObj = { background: 'linear-gradient(135deg, #db2777 0%, #f43f5e 100%)', color: '#ffffff', borderColor: 'transparent', boxShadow: '0 4px 14px rgba(244, 63, 94, 0.45)' };
+                else if (c.includes('suit') || c.includes('blazer')) styleObj = { background: 'linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)', color: '#ffffff', borderColor: 'transparent', boxShadow: '0 4px 14px rgba(79, 70, 229, 0.45)' };
+                else styleObj = { background: 'linear-gradient(135deg, #d97706 0%, #f59e0b 100%)', color: '#ffffff', borderColor: 'transparent', boxShadow: '0 4px 14px rgba(245, 158, 11, 0.45)' };
+              } else {
+                if (c.includes('shirt')) styleObj = { background: 'rgba(6, 182, 212, 0.12)', color: '#38bdf8', border: '1px solid rgba(6, 182, 212, 0.28)' };
+                else if (c.includes('trouser') || c.includes('pant') || c.includes('jean')) styleObj = { background: 'rgba(16, 185, 129, 0.12)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.28)' };
+                else if (c.includes('kurti') || c.includes('dress') || c.includes('ethnic') || c.includes('saree')) styleObj = { background: 'rgba(244, 63, 94, 0.12)', color: '#fb7185', border: '1px solid rgba(244, 63, 94, 0.28)' };
+                else if (c.includes('suit') || c.includes('blazer')) styleObj = { background: 'rgba(139, 92, 246, 0.12)', color: '#c4b5fd', border: '1px solid rgba(139, 92, 246, 0.28)' };
+                else styleObj = { background: 'rgba(245, 158, 11, 0.12)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.28)' };
+              }
+
+              return (
+                <button
+                  key={catName}
+                  type="button"
+                  className={`cat-pill ${isActive ? 'cat-pill-active' : ''}`}
+                  style={styleObj}
+                  onClick={() => setSelectedCategory(catName)}
+                >
+                  {catName} ({count})
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Products Container */}
           <div className="products-pane-body">
-            {searchFilter && searchResults.length > 0 ? (
-              /* Live matching items list when user scans or searches */
-              <div className="products-search-results">
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '8px', fontWeight: '700' }}>
-                  {searchResults.length} matched product{searchResults.length === 1 ? '' : 's'}:
+            {filteredProducts.length === 0 ? (
+              <div className="products-empty-state">
+                <div className="barcode-mint-box">
+                  <Barcode size={36} color="var(--accent-indigo)" />
                 </div>
-                {searchResults.map(prod => {
-                  const isUnreceived = !prod.stock_qty || prod.stock_qty <= 0;
+                <h4 className="products-empty-title">No products found</h4>
+                <p className="products-empty-sub">
+                  No items match category "{selectedCategory}" or search query "{productSearchInput}".
+                </p>
+                <button 
+                  type="button" 
+                  className="btn btn-secondary btn-sm" 
+                  style={{ marginTop: '12px' }}
+                  onClick={() => { setSelectedCategory('ALL'); setProductSearchInput(''); setBarcodeInput(''); }}
+                >
+                  Clear Filters
+                </button>
+              </div>
+            ) : viewMode === 'grid' ? (
+              /* High-End Tactile Product Card Grid */
+              <div className="products-card-grid">
+                {filteredProducts.map(prod => {
+                  const isZeroStock = !prod.stock_qty || prod.stock_qty <= 0;
+                  const isLowStock = prod.stock_qty > 0 && prod.stock_qty <= (prod.reorder_level || 5);
 
                   return (
                     <div 
-                      key={prod.id} 
-                      className="product-card-tile"
-                      style={{
-                        opacity: isUnreceived ? 0.65 : 1,
-                        cursor: isUnreceived ? 'not-allowed' : 'pointer',
-                        borderLeft: isUnreceived ? '3px solid var(--accent-amber)' : '3px solid transparent'
-                      }}
+                      key={prod.id || prod._id} 
+                      className={`pos-product-card ${isZeroStock ? 'card-out-of-stock' : ''}`}
                       onClick={() => addToCart(prod, 1)}
+                      style={{ cursor: 'pointer' }}
+                      title={`Click to add ${prod.name} to bill`}
                     >
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: '800', fontSize: '13px', marginBottom: '2px' }}>{prod.name}</div>
-                        <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                          {prod.barcode} · {isUnreceived ? (
-                            <span style={{ color: 'var(--accent-amber)', fontWeight: '700' }}>⚠️ Unreceived (0 Stock)</span>
-                          ) : (
-                            <span>Stock: {prod.stock_qty} {prod.uom || 'Pcs'}</span>
-                          )}
-                        </div>
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontWeight: '900', fontSize: '14px', color: 'var(--text-primary)' }}>
-                          ₹{prod.selling_price || 0}
-                        </div>
-                        {isUnreceived ? (
-                          <div style={{ fontSize: '10px', color: 'var(--accent-amber)', fontWeight: '700' }}>
-                            Need Receiving
-                          </div>
+                      <div className="card-top-row">
+                        <span className="card-category-tag">{prod.category || 'General'}</span>
+                        {isZeroStock ? (
+                          <span className="stock-pill stock-zero">0 Stock</span>
+                        ) : isLowStock ? (
+                          <span className="stock-pill stock-low">{prod.stock_qty} left</span>
                         ) : (
-                          <div style={{ fontSize: '10px', color: 'var(--accent-emerald)', fontWeight: '700' }}>
-                            + Add to Bill
-                          </div>
+                          <span className="stock-pill stock-ok">{prod.stock_qty} in stock</span>
                         )}
+                      </div>
+
+                      <div className="card-product-title">{prod.name}</div>
+                      
+                      <div className="card-meta-row">
+                        <span className="card-barcode">{prod.barcode}</span>
+                        <span className="card-gst-tag">GST {prod.gst_rate || 12}%</span>
+                      </div>
+
+                      <div className="card-bottom-row">
+                        <div className="card-price">
+                          ₹{Number(prod.selling_price || 0).toLocaleString('en-IN')}
+                        </div>
+                        <button 
+                          type="button" 
+                          className="card-add-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            addToCart(prod, 1);
+                          }}
+                        >
+                          <Plus size={14} /> Add
+                        </button>
                       </div>
                     </div>
                   );
                 })}
               </div>
             ) : (
-              /* Default Empty State matching Screenshot 1 */
-              <div className="products-empty-state">
-                <div className="barcode-mint-box">
-                  <Barcode size={38} color="#0d9488" />
-                </div>
-                <h4 className="products-empty-title">No products yet</h4>
-                <p className="products-empty-sub">
-                  Scan a barcode or type in the search box to load products here
-                </p>
+              /* Compact High-Density List View */
+              <div className="products-dense-list">
+                {filteredProducts.map(prod => {
+                  const isZeroStock = !prod.stock_qty || prod.stock_qty <= 0;
+                  return (
+                    <div 
+                      key={prod.id || prod._id} 
+                      className="product-dense-item"
+                      onClick={() => addToCart(prod, 1)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <div className="dense-item-info">
+                        <div className="dense-name">{prod.name}</div>
+                        <div className="dense-sub">{prod.barcode} · {prod.category || 'General'}</div>
+                      </div>
+                      <div className="dense-item-right">
+                        <span className={`stock-pill ${isZeroStock ? 'stock-zero' : 'stock-ok'}`}>
+                          {prod.stock_qty || 0} left
+                        </span>
+                        <span className="dense-price">
+                          ₹{Number(prod.selling_price || 0).toLocaleString('en-IN')}
+                        </span>
+                        <button 
+                          type="button" 
+                          className="btn btn-sm btn-secondary dense-add-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            addToCart(prod, 1);
+                          }}
+                        >
+                          + Add
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* ─── BOTTOM DOCK (Matching Screenshot 1) ─── */}
+      {/* ─── BOTTOM DOCK / CHECKOUT ACTION BAR ─── */}
       <footer className="posbranch-footer">
         {/* Left Action Buttons */}
         <div className="posbranch-nav-actions">
           <button 
+            type="button"
             className="posbranch-nav-btn"
             onClick={() => setCurrentPage('dashboard')}
-            title="Dashboard Overview"
+            title="Dashboard Overview [F1]"
           >
             <Home size={18} />
             <span>HOME</span>
           </button>
 
           <button 
+            type="button"
             className="posbranch-nav-btn"
             onClick={() => setModalState({ type: 'calculator', data: null })}
-            title="Quick Calculator"
+            title="Calculator"
           >
             <Calculator size={18} />
             <span>CALC</span>
           </button>
 
           <button 
+            type="button"
             className="posbranch-nav-btn"
             onClick={() => setModalState({ type: 'quickCustomer', data: null })}
-            title="Customer Selector"
+            title="Select Customer [F8]"
           >
             <User size={18} />
             <span>CUST</span>
           </button>
 
           <button 
-            className={`posbranch-nav-btn ${showAllItems ? 'btn-active' : ''}`}
-            onClick={() => setShowAllItems(prev => !prev)}
-            title="Toggle Product Catalog Panel"
-          >
-            <List size={18} />
-            <span>ITEMS</span>
-          </button>
-
-          <button 
+            type="button"
             className="posbranch-nav-btn hold-btn"
             onClick={() => holdCart()}
             disabled={cart.length === 0}
@@ -598,6 +742,7 @@ export default function PosPage() {
           </button>
 
           <button 
+            type="button"
             className="posbranch-nav-btn holds-btn"
             onClick={() => setModalState({ type: 'holds', data: null })}
             title="View Held Bills"
@@ -610,41 +755,44 @@ export default function PosPage() {
           </button>
         </div>
 
-        {/* Center / Right: Submit Sale & Totals */}
+        {/* Center & Right: KPI Indicators & Primary Glowing Checkout Button */}
         <div className="posbranch-checkout-summary">
-          <button 
-            className="submit-sale-btn"
-            disabled={cart.length === 0}
-            onClick={() => setModalState({ type: 'payment', data: null })}
-          >
-            <Check size={18} />
-            <span>SUBMIT SALE</span>
-          </button>
-
           <div className="posbranch-kpi-totals">
             <div className="kpi-group">
               <div className="kpi-label">ITEMS</div>
               <div className="kpi-value">{cart.length}</div>
             </div>
             <div className="kpi-group">
-              <div className="kpi-label">QTY</div>
+              <div className="kpi-label">TOTAL QTY</div>
               <div className="kpi-value">{cartTotals.itemCount}</div>
             </div>
             {cartTotals.totalDiscountAmount > 0 && (
-              <div className="kpi-group" style={{ color: 'var(--accent-emerald)' }}>
-                <div className="kpi-label" style={{ color: 'var(--accent-emerald)' }}>SAVED</div>
-                <div className="kpi-value" style={{ color: 'var(--accent-emerald)', fontWeight: '800' }}>
+              <div className="kpi-group kpi-saved">
+                <div className="kpi-label">SAVED</div>
+                <div className="kpi-value saved-val">
                   -₹{cartTotals.totalDiscountAmount.toFixed(2)}
                 </div>
               </div>
             )}
             <div className="kpi-group kpi-total">
-              <div className="kpi-label">TOTAL</div>
-              <div className="kpi-value total-teal">
-                ₹{cartTotals.grandTotal.toFixed(2)}
+              <div className="kpi-label">NET PAYABLE</div>
+              <div className="kpi-value total-luminous">
+                ₹{cartTotals.grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </div>
             </div>
           </div>
+
+          <button 
+            type="button"
+            className="submit-sale-btn magnetic-checkout-btn"
+            disabled={cart.length === 0}
+            onClick={() => setModalState({ type: 'payment', data: null })}
+            title="Proceed to Payment & Print Tax Invoice [F12]"
+          >
+            <CreditCard size={18} />
+            <span>PAY &amp; PRINT BILL</span>
+            <span className="checkout-kbd-badge">F12</span>
+          </button>
         </div>
       </footer>
     </div>

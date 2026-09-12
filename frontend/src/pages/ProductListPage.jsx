@@ -120,7 +120,16 @@ export default function ProductListPage() {
         </div>
 
         {/* Action Buttons */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <button 
+            className="btn btn-secondary" 
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: '700' }}
+            onClick={() => setCurrentPage('barcode')}
+          >
+            <Barcode size={15} color="var(--accent-blue)" />
+            Halett 4×6" Barcodes
+          </button>
+
           <button 
             className="btn btn-secondary" 
             style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: '700' }}

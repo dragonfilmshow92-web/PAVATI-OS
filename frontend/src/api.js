@@ -74,6 +74,7 @@ export const api = {
   closeShift: (data) => apiPost(`${API_BASE}/shifts/close`, 'POST', data),
 
   // Checkout & Invoices
+  calculateGST: (data) => apiPost(`${API_BASE}/gst/calculate`, 'POST', data),
   checkout: (data) => apiPost(`${API_BASE}/cart/checkout`, 'POST', data),
   getInvoices: (params = {}) => {
     const query = new URLSearchParams(params).toString();
@@ -99,6 +100,7 @@ export const api = {
 
   // Returns & Exchanges
   getReturns: () => apiFetch(`${API_BASE}/returns`),
+  getCreditNote: (no) => apiFetch(`${API_BASE}/returns/${encodeURIComponent(no)}`),
   processReturn: (data) => apiPost(`${API_BASE}/returns`, 'POST', data),
 
   // Purchase Orders

@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+﻿import React, { createContext, useContext, useState, useEffect } from 'react';
 import { api } from '../api';
+import soundFx from '../utils/sounds';
 
 const AppContext = createContext(null);
 
@@ -21,7 +22,18 @@ export function AppProvider({ children }) {
     return 'dashboard';
   };
 
-  const [theme, setTheme] = useState(localStorage.getItem('pos_theme') || 'dark');
+  const [theme, setTheme] = useState(() => {
+    try {
+      if (!localStorage.getItem('pos_theme_v10_dark_enforce')) {
+        localStorage.setItem('pos_theme', 'dark');
+        localStorage.setItem('pos_theme_v10_dark_enforce', 'true');
+        return 'dark';
+      }
+      return localStorage.getItem('pos_theme') || 'dark';
+    } catch (e) {
+      return 'dark';
+    }
+  });
   const [currentPage, setCurrentPageRaw] = useState(getInitialPage);
   // Default sidebar open (true)
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -59,8 +71,8 @@ export function AppProvider({ children }) {
   const [grnRecords, setGrnRecords] = useState([]);
   const [activeShift, setActiveShift] = useState(null);
   const [settings, setSettings] = useState({
-    store_name: "TIORAS",
-    store_tagline: "Fashion Studio",
+    store_name: "PAVATI OS",
+    store_tagline: "Powered by PAVATI OS",
     store_address: "",
     store_phone: "",
     store_gstin: "",
@@ -170,23 +182,31 @@ export function AppProvider({ children }) {
   };
 
   // Cart operations
-  const addToCart = (product, quantity = 1) => {
+  const addToCart = (product, quantity = 1, playSound = true) => {
     if (!product) return;
 
-    // Strict Retail Rule: Without receiving stock, billing cannot be done
     const currentStock = Number(product.stock_qty) || 0;
+    const prodId = product.id || product._id;
+
+    // Soft-warn if stock is 0, but still allow billing
+    // (hard-block removed: cashiers can always override at counter)
     if (currentStock <= 0) {
-      showToast(`Cannot bill "${product.name}" — stock has not been received yet (0 on hand). Please receive stock in Stock Receiving before billing.`, 'warning');
-      return;
+      soundFx.error();
+      showToast(`⚠ "${product.name}" has 0 stock on hand — added to bill anyway. Receive stock in Stock Receiving.`, 'warning');
     }
 
     setCart(prev => {
-      const idx = prev.findIndex(item => item.id === product.id);
+      const idx = prev.findIndex(item => 
+        (item.id && prodId && String(item.id) === String(prodId)) || 
+        (item.barcode && product.barcode && item.barcode === product.barcode)
+      );
       if (idx > -1) {
         const next = [...prev];
         const newQty = next[idx].qty + quantity;
-        if (newQty > currentStock) {
-          showToast(`Cannot bill ${newQty} units of "${product.name}". Only ${currentStock} units received in stock.`, 'warning');
+        // Only block if stock is KNOWN and exceeded (skip if 0 — already warned above)
+        if (currentStock > 0 && newQty > currentStock) {
+          soundFx.error();
+          showToast(`Only ${currentStock} units of "${product.name}" in stock.`, 'warning');
           return prev;
         }
         const disc = Number(next[idx].discount_percent) || 0;
@@ -196,50 +216,66 @@ export function AppProvider({ children }) {
           qty: newQty,
           subtotal: Math.round(newQty * unitPrice * 100) / 100
         };
+        if (playSound) soundFx.addToCart();
         return next;
       } else {
-        if (quantity > currentStock) {
-          showToast(`Cannot bill ${quantity} units of "${product.name}". Only ${currentStock} units received in stock.`, 'warning');
+        // Only block if stock is KNOWN and exceeded
+        if (currentStock > 0 && quantity > currentStock) {
+          soundFx.error();
+          showToast(`Only ${currentStock} units of "${product.name}" in stock.`, 'warning');
           return prev;
         }
+        if (playSound) soundFx.addToCart();
         return [...prev, {
-          id: product.id,
-          sku: product.sku,
-          barcode: product.barcode,
+          id: prodId,
+          sku: product.sku || '',
+          barcode: product.barcode || '',
           name: product.name,
-          category: product.category,
-          size: product.size,
-          color: product.color,
-          cost_price: product.cost_price,
-          selling_price: product.selling_price,
-          mrp: product.mrp || product.selling_price,
+          category: product.category || 'General',
+          size: product.size || '',
+          color: product.color || '',
+          cost_price: Number(product.cost_price) || 0,
+          selling_price: Number(product.selling_price) || 0,
+          mrp: Number(product.mrp) || Number(product.selling_price) || 0,
           rack_name: product.rack_name || product.rack_location || "Rack A-01",
-          gst_rate: product.gst_rate || 12,
+          gst_rate: product.gst_rate !== undefined ? Number(product.gst_rate) : 12,
+          hsn_code: product.hsn_code || '',
+          tax_inclusive: Boolean(product.tax_inclusive),
           qty: quantity,
           discount_percent: 0,
-          subtotal: quantity * product.selling_price
+          subtotal: quantity * (Number(product.selling_price) || 0)
         }];
       }
     });
 
-    showToast(`Added ${product.name} to cart`, 'success');
+    if (currentStock > 0) {
+      showToast(`Added ${product.name} to bill`, 'success');
+    }
   };
+
 
   const updateCartQty = (id, delta) => {
     setCart(prev => {
       return prev.map(item => {
-        if (item.id === id) {
+        if (String(item.id) === String(id)) {
           const newQty = item.qty + delta;
-          if (newQty <= 0) return null;
+          if (newQty <= 0) {
+            soundFx.removeItem();
+            return null;
+          }
 
           // Stock limit check — prevent billing more than what's in stock
           if (delta > 0) {
-            const liveItem = items.find(i => i.id === id);
+            const liveItem = items.find(i => (i.id && String(i.id) === String(id)) || (i._id && String(i._id) === String(id)));
             const availableStock = Number(liveItem?.stock_qty ?? 9999);
             if (newQty > availableStock) {
+              soundFx.error();
               showToast(`Only ${availableStock} units of "${item.name}" in stock.`, 'warning');
               return item; // don't change
             }
+            soundFx.addToCart();
+          } else {
+            soundFx.removeItem();
           }
 
           const disc = Number(item.discount_percent) || 0;
@@ -274,10 +310,12 @@ export function AppProvider({ children }) {
   };
 
   const removeFromCart = (id) => {
+    soundFx.removeItem();
     setCart(prev => prev.filter(item => item.id !== id));
   };
 
   const clearCart = () => {
+    soundFx.removeItem();
     setCart([]);
     setCartCustomer(null);
     setCartDiscountPercent(0);
@@ -389,17 +427,67 @@ export function AppProvider({ children }) {
   }
 
   const totalDiscountAmount = cartDiscountAmount + couponDiscount;
-  const discountedSubtotal = Math.max(0, subtotal - totalDiscountAmount);
-  
-  // Tax breakdown
-  const totalTax = cart.reduce((acc, item) => {
-    const ratio = subtotal > 0 ? (discountedSubtotal / subtotal) : 1;
-    const itemSub = item.subtotal * ratio;
-    const tax = itemSub * (item.gst_rate / (100 + item.gst_rate));
-    return acc + tax;
-  }, 0);
-  
-  const grandTotal = Math.round(discountedSubtotal);
+  const discountRatio = subtotal > 0 ? (totalDiscountAmount / subtotal) : 0;
+
+  // Seller and Buyer state comparison for IGST vs CGST/SGST
+  const sellerState = settings?.store_state || 'Maharashtra';
+  const sellerStateCode = String(settings?.store_state_code || '27').trim().padStart(2, '0');
+  const buyerState = String(cartCustomer?.state || '').trim();
+  const buyerGstin = String(cartCustomer?.gstin || '').trim();
+  let buyerCode = null;
+  if (/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/i.test(buyerGstin)) {
+    buyerCode = buyerGstin.slice(0, 2);
+  }
+
+  const isInterstate = Boolean(
+    (buyerCode && sellerStateCode && buyerCode !== sellerStateCode) ||
+    (buyerState && sellerState && buyerState.toLowerCase() !== sellerState.toLowerCase())
+  );
+
+  // Line-by-line GST calculation
+  let computedTaxable = 0;
+  let computedCgst = 0;
+  let computedSgst = 0;
+  let computedIgst = 0;
+  let computedTotalTax = 0;
+  let computedGrandTotalRaw = 0;
+
+  cart.forEach(item => {
+    const lineNet = Math.max(0, (item.subtotal || 0) * (1 - discountRatio));
+    const rate = Number(item.gst_rate !== undefined ? item.gst_rate : (settings?.default_tax_rate ?? 12));
+    const isInclusive = item.tax_inclusive !== undefined 
+      ? Boolean(item.tax_inclusive) 
+      : Boolean(settings?.tax_inclusive_default);
+
+    let taxable = 0;
+    let tax = 0;
+    let lineTotal = 0;
+
+    if (isInclusive) {
+      taxable = lineNet / (1 + rate / 100);
+      tax = lineNet - taxable;
+      lineTotal = lineNet;
+    } else {
+      taxable = lineNet;
+      tax = taxable * (rate / 100);
+      lineTotal = taxable + tax;
+    }
+
+    computedTaxable += taxable;
+    computedTotalTax += tax;
+    computedGrandTotalRaw += lineTotal;
+
+    if (isInterstate) {
+      computedIgst += tax;
+    } else {
+      computedCgst += tax / 2;
+      computedSgst += tax / 2;
+    }
+  });
+
+  const grandTotal = Math.round(computedGrandTotalRaw);
+  const roundOff = Math.round((grandTotal - computedGrandTotalRaw) * 100) / 100;
+  const totalTax = Math.round(computedTotalTax * 100) / 100;
 
   return (
     <AppContext.Provider value={{
@@ -440,12 +528,18 @@ export function AppProvider({ children }) {
       restoreHeldCart,
       deleteHeldCart,
       cartTotals: {
-        subtotal,
+        subtotal: Math.round(subtotal * 100) / 100,
+        taxableAmount: Math.round(computedTaxable * 100) / 100,
+        cgstAmount: Math.round(computedCgst * 100) / 100,
+        sgstAmount: Math.round(computedSgst * 100) / 100,
+        igstAmount: Math.round(computedIgst * 100) / 100,
+        totalTax,
+        isInterstate,
         discountAmount: cartDiscountAmount,
         couponDiscount,
         totalDiscountAmount,
         appliedCoupon,
-        totalTax,
+        roundOff,
         grandTotal,
         itemCount: cart.reduce((acc, i) => acc + i.qty, 0)
       },

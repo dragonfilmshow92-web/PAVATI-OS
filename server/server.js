@@ -1,4 +1,4 @@
-require('dotenv').config();
+﻿require('dotenv').config();
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -96,7 +96,22 @@ const server = http.createServer(async (req, res) => {
 
       // 2. Categories
       if (pathname === '/api/categories' && method === 'GET') {
-        return sendJSON(res, 200, { success: true, data: db.getCategories() });
+        return sendJSON(res, 200, { success: true, data: await db.getCategories() });
+      }
+      if (pathname === '/api/categories' && method === 'POST') {
+        const body = await parseBody(req);
+        const cat = await db.createCategory(body);
+        return sendJSON(res, 201, { success: true, data: cat, message: 'Category created' });
+      }
+      const catIdMatch = pathname.match(/^\/api\/categories\/([^/]+)$/);
+      if (catIdMatch && method === 'PUT') {
+        const body = await parseBody(req);
+        const cat = await db.updateCategory(catIdMatch[1], body);
+        return sendJSON(res, 200, { success: true, data: cat, message: 'Category updated' });
+      }
+      if (catIdMatch && method === 'DELETE') {
+        const cat = await db.deleteCategory(catIdMatch[1]);
+        return sendJSON(res, 200, { success: true, data: cat, message: 'Category removed' });
       }
 
       // 3. Items & Inventory
@@ -199,6 +214,24 @@ const server = http.createServer(async (req, res) => {
         return sendJSON(res, 201, { success: true, data: invoice, message: "Sale completed successfully!" });
       }
 
+      // 6b. Central GST Calculation Engine
+      if (pathname === '/api/gst/calculate' && method === 'POST') {
+        const body = await parseBody(req);
+        const settings = await db.getSettings();
+        const result = db.calculateGST(body.items || [], {
+          seller_state: body.seller_state || settings.store_state || 'Maharashtra',
+          seller_state_code: body.seller_state_code || settings.store_state_code || '27',
+          seller_gstin: body.seller_gstin || settings.store_gstin || '',
+          buyer_state: body.buyer_state || '',
+          buyer_state_code: body.buyer_state_code || '',
+          customer_gstin: body.customer_gstin || '',
+          discount_amount: Number(body.discount_amount || 0),
+          default_tax_rate: settings.default_tax_rate ?? 12,
+          default_tax_inclusive: settings.tax_inclusive_default ?? false
+        });
+        return sendJSON(res, 200, { success: true, data: result });
+      }
+
       if (pathname === '/api/invoices' && method === 'GET') {
         const invoices = await db.getInvoices({
           search: parsedUrl.query.search,
@@ -226,6 +259,13 @@ const server = http.createServer(async (req, res) => {
       if (pathname === '/api/returns' && method === 'GET') {
         const items = await db.getReturns();
         return sendJSON(res, 200, { success: true, data: items });
+      }
+
+      const returnMatch = pathname.match(/^\/api\/returns\/([^/]+)$/);
+      if (returnMatch && method === 'GET') {
+        const item = await db.getCreditNote(decodeURIComponent(returnMatch[1]));
+        if (!item) return sendJSON(res, 404, { success: false, message: "Credit Note not found" });
+        return sendJSON(res, 200, { success: true, data: item });
       }
 
       if (pathname === '/api/returns' && method === 'POST') {
@@ -392,7 +432,7 @@ const server = http.createServer(async (req, res) => {
       // 10.1. ERPNext Backend Connector API
       if (pathname === '/api/erpnext/test' && method === 'POST') {
         const body = await parseBody(req);
-        const settings = db.getSettings();
+        const settings = await db.getSettings();
         const client = new ERPNextClient({ ...settings.erpnext, ...body });
         const result = await client.testConnection();
         return sendJSON(res, 200, result);
@@ -400,24 +440,25 @@ const server = http.createServer(async (req, res) => {
 
       if (pathname === '/api/erpnext/sync/items' && method === 'POST') {
         const body = await parseBody(req);
-        const settings = db.getSettings();
+        const settings = await db.getSettings();
         const client = new ERPNextClient({ ...settings.erpnext, ...body });
         if (body.direction === 'pull') {
           try {
             const erpItems = await client.fetchItems();
             let importedCount = 0;
             if (Array.isArray(erpItems)) {
+              const currentItems = await db.getItems();
               for (const erpItm of erpItems) {
-                const existing = db.getItems().find(i => i.sku === erpItm.name || i.name === erpItm.item_name);
+                const existing = currentItems.find(i => i.sku === erpItm.name || i.name === erpItm.item_name);
                 if (existing) {
-                  db.updateItem(existing.id, {
+                  await db.updateItem(existing.id, {
                     selling_price: erpItm.standard_rate || existing.selling_price,
                     cost_price: erpItm.valuation_rate || existing.cost_price,
                     uom: erpItm.stock_uom || existing.uom
                   });
                   importedCount++;
                 } else {
-                  db.createItem({
+                  await db.createItem({
                     name: erpItm.item_name || erpItm.name,
                     sku: erpItm.name,
                     category: (erpItm.item_group || 'general').toLowerCase(),
@@ -435,7 +476,7 @@ const server = http.createServer(async (req, res) => {
             return sendJSON(res, 400, { success: false, message: pullErr.message || "Failed to pull catalog items from ERPNext" });
           }
         } else {
-          const items = db.getItems();
+          const items = await db.getItems();
           let pushedCount = 0;
           let failedCount = 0;
           for (const item of items) {
@@ -452,9 +493,9 @@ const server = http.createServer(async (req, res) => {
 
       if (pathname === '/api/erpnext/sync/invoices' && method === 'POST') {
         const body = await parseBody(req);
-        const settings = db.getSettings();
+        const settings = await db.getSettings();
         const client = new ERPNextClient({ ...settings.erpnext, ...body });
-        const invoices = db.load().invoices || [];
+        const invoices = await db.getInvoices({ limit: 500 }) || [];
         let pushedCount = 0;
         let errors = [];
         for (const inv of invoices) {
@@ -497,16 +538,6 @@ const server = http.createServer(async (req, res) => {
         const body = await parseBody(req);
         const updatedCust = await db.rechargeWallet(walletMatch[1], body.amount);
         return sendJSON(res, 200, { success: true, data: updatedCust });
-      }
-
-      // 14. Sales Returns & Credit Notes
-      if (pathname === '/api/returns' && method === 'GET') {
-        return sendJSON(res, 200, { success: true, data: await db.getReturns() });
-      }
-      if (pathname === '/api/returns' && method === 'POST') {
-        const body = await parseBody(req);
-        const ret = await db.processReturn(body);
-        return sendJSON(res, 201, { success: true, data: ret, message: 'Return processed & credit note generated' });
       }
 
       // 15. Purchase Orders (PO)
@@ -629,7 +660,7 @@ if (require.main === module) {
   // 1. Immediately start listening on PORT so UI static assets & health checks are available instantly
   server.listen(PORT, () => {
     console.log(`=======================================================`);
-    console.log(`🚀 Retail POS & UPI Billing System running!`);
+    console.log(`🚀 PAVATI OS & UPI Billing System running!`);
     console.log(`📍 Web Dashboard & Touch Counter: http://localhost:${PORT}`);
     console.log(`📦 Real-time Inventory & Reports active (MongoDB)`);
     console.log(`💳 Dynamic UPI Engine: enabled`);

@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { api } from '../api';
+import soundFx from '../utils/sounds';
 import { 
   ShoppingBag, 
   Search, 
@@ -87,6 +88,7 @@ export default function ReceivingPage() {
     }
     setSearchQuery('');
     setShowDropdown(false);
+    soundFx.barcodeScan();
     showToast(`Added "${item.name}" to receiving cart`, 'info');
   };
 
@@ -250,12 +252,14 @@ export default function ReceivingPage() {
       });
 
       if (res && (res.success || res.data)) {
+        soundFx.stockReceived(); // 📦 Stock received confirmation fanfare
         showToast(`Successfully received ${totalUnits} units of stock!`, "success");
         await refreshItems();
         await refreshGRN();
         setReceivingCart([]);
         setInvoiceNo(`INV-${String(Math.floor(Math.random() * 9000) + 1000)}`);
       } else {
+        soundFx.error();
         showToast(res?.message || "Failed to receive stock", "danger");
       }
     } catch (err) {

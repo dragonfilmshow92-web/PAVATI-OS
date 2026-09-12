@@ -1,5 +1,5 @@
-/**
- * db-mongo.js — MongoDB (Mongoose) Database Layer for Tioras POS
+﻿/**
+ * db-mongo.js — MongoDB (Mongoose) Database Layer for PAVATI OS
  * Drop-in replacement for db.js using MongoDB Atlas (or local MongoDB)
  * Set MONGODB_URI in your .env file
  */
@@ -19,6 +19,9 @@ const PurchaseOrder = require('./models/PurchaseOrder');
 const Coupon      = require('./models/Coupon');
 const Settings    = require('./models/Settings');
 const ServiceReminder = require('./models/ServiceReminder');
+const Category    = require('./models/Category');
+const SalesReturn = require('./models/SalesReturn');
+const { calculateGST } = require('./services/gstEngine');
 
 // ─── Connection ─────────────────────────────────────────────────────────────
 
@@ -26,7 +29,7 @@ let isConnected = false;
 
 async function connectDB() {
   if (isConnected) return;
-  const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/tioras-pos';
+  const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/PAVATI OS-pos';
   try {
     await mongoose.connect(uri, {
       serverSelectionTimeoutMS: 15000,
@@ -82,7 +85,22 @@ async function genInvoiceNo() {
     { upsert: true, new: true }
   );
   const seq = String(result.invoice_counter || 1).padStart(4, '0');
-  return `INV-${dateStr}-${seq}`;
+  const prefix = (result.invoice_prefix || 'INV').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  return `${prefix}-${dateStr}-${seq}`;
+}
+
+async function genCreditNoteNo() {
+  const d = new Date();
+  const dateStr = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+  // Atomic increment for Credit Notes
+  const result = await Settings.findByIdAndUpdate(
+    'store_settings',
+    { $inc: { credit_note_counter: 1 } },
+    { upsert: true, new: true }
+  );
+  const seq = String(result.credit_note_counter || 1).padStart(4, '0');
+  const prefix = (result.credit_note_prefix || 'CN').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  return `${prefix}-${dateStr}-${seq}`;
 }
 
 // ─── Seed Initial Data ───────────────────────────────────────────────────────
@@ -98,7 +116,7 @@ async function seedInitialData() {
 
   // Initialize Settings
   await Settings.findByIdAndUpdate('store_settings', {
-    store_name: 'TIORAS POS',
+    store_name: 'PAVATI OS',
     tagline: 'Fashion & Retail Studio',
     store_tagline: 'Fashion & Retail Studio',
     address: 'Shop 1, Main Market',
@@ -114,7 +132,7 @@ async function seedInitialData() {
     receipt_header: 'TAX INVOICE / CASH MEMO',
     receipt_footer: 'Thank you for shopping with us!\nExchange within 7 days with original bill.',
     default_tax_rate: 12,
-    logo_url: '/tioras-logo.png',
+    logo_url: '/PAVATI OS-logo.png',
     invoice_counter: 0,
     initialized: true
   }, { upsert: true, new: true });
@@ -144,19 +162,21 @@ async function seedInitialData() {
   }
 
   console.log('✅ Store configuration initialized (clean store ready)');
+
+  // Seed default categories to MongoDB if collection is empty
+  const catCount = await Category.countDocuments();
+  if (catCount === 0) {
+    await Category.insertMany([
+      { id: 'shirts',      name: 'Shirts & Tops',       icon: '👔', sort_order: 1 },
+      { id: 'trousers',    name: 'Trousers & Jeans',    icon: '👖', sort_order: 2 },
+      { id: 'dresses',     name: 'Dresses & Kurtis',    icon: '👗', sort_order: 3 },
+      { id: 'fabrics',     name: 'Fabrics & Rolls',     icon: '🧵', sort_order: 4 },
+      { id: 'accessories', name: 'Accessories',          icon: '👜', sort_order: 5 },
+      { id: 'daily',       name: 'Care & Daily',         icon: '🧴', sort_order: 6 }
+    ]);
+    console.log('🌱 Default categories seeded to MongoDB');
+  }
 }
-
-// ─── CATEGORIES (static list) ────────────────────────────────────────────────
-
-const CATEGORIES = [
-  { id: 'all',         name: 'All Products',       icon: '✨' },
-  { id: 'shirts',      name: 'Shirts & Tops',       icon: '👔' },
-  { id: 'trousers',    name: 'Trousers & Jeans',    icon: '👖' },
-  { id: 'dresses',     name: 'Dresses & Kurtis',    icon: '👗' },
-  { id: 'fabrics',     name: 'Fabrics & Rolls',     icon: '🧵' },
-  { id: 'accessories', name: 'Accessories',          icon: '👜' },
-  { id: 'daily',       name: 'Care & Daily',         icon: '🧴' }
-];
 
 // ─── SETTINGS ────────────────────────────────────────────────────────────────
 
@@ -173,16 +193,44 @@ async function updateSettings(updates) {
   return s;
 }
 
-// ─── CATEGORIES ──────────────────────────────────────────────────────────────
+// ─── CATEGORIES (MongoDB-backed) ──────────────────────────────────────────────
 
-function getCategories() {
-  return CATEGORIES;
+async function getCategories() {
+  const cats = await Category.find({ active: true }).sort({ sort_order: 1 }).lean();
+  // Always prepend synthetic 'All Products' for POS filter bar
+  return [{ id: 'all', name: 'All Products', icon: '✨', sort_order: 0 }, ...cats];
+}
+
+async function createCategory(body) {
+  const id = body.id || body.name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+  const sortOrder = body.sort_order != null ? body.sort_order : (await Category.countDocuments()) + 1;
+  const cat = await Category.findOneAndUpdate(
+    { id },
+    { ...body, id, sort_order: sortOrder },
+    { upsert: true, new: true }
+  ).lean();
+  return cat;
+}
+
+async function updateCategory(id, updates) {
+  const cat = await Category.findOneAndUpdate({ id }, updates, { new: true }).lean();
+  if (!cat) throw new Error(`Category not found: ${id}`);
+  return cat;
+}
+
+async function deleteCategory(id) {
+  const cat = await Category.findOneAndUpdate({ id }, { active: false }, { new: true }).lean();
+  if (!cat) throw new Error(`Category not found: ${id}`);
+  return cat;
 }
 
 // ─── ITEMS ───────────────────────────────────────────────────────────────────
 
 async function getItems(filter = {}) {
   const query = {};
+  if (!filter.include_deleted) {
+    query.active = { $ne: false };
+  }
   if (filter.category && filter.category !== 'all') {
     query.category = filter.category;
   }
@@ -209,10 +257,11 @@ async function getItems(filter = {}) {
 async function getItemByBarcode(barcode) {
   if (!barcode) return null;
   const clean = String(barcode).trim();
-  let item = await Item.findOne({ barcode: clean }).lean();
+  let item = await Item.findOne({ barcode: clean, active: { $ne: false } }).lean();
   if (!item) {
     const noLeadingZeros = clean.replace(/^0+/, '');
     item = await Item.findOne({
+      active: { $ne: false },
       $or: [
         { barcode: { $regex: `^0*${clean}$`, $options: 'i' } },
         { barcode: noLeadingZeros },
@@ -251,7 +300,9 @@ async function createItem(body) {
     selling_price: Number(body.selling_price) || 0,
     cost_price: Number(body.cost_price) || 0,
     mrp: Number(body.mrp) || Number(body.selling_price) || 0,
-    gst_rate: Number(body.gst_rate) !== undefined ? Number(body.gst_rate) : 12,
+    gst_rate: Number(body.gst_rate) !== undefined && !isNaN(Number(body.gst_rate)) ? Number(body.gst_rate) : 12,
+    hsn_code: body.hsn_code !== undefined ? String(body.hsn_code).trim() : '',
+    tax_inclusive: Boolean(body.tax_inclusive),
     stock_qty: Number(body.stock_qty) || 0,
     reorder_level: Number(body.reorder_level) || 5,
     min_stock: Number(body.min_stock) || 0,
@@ -292,7 +343,11 @@ async function deleteItem(id) {
   if (mongoose.isValidObjectId(id)) {
     orCondition.push({ _id: id });
   }
-  const item = await Item.findOneAndDelete({ $or: orCondition }).lean();
+  const item = await Item.findOneAndUpdate(
+    { $or: orCondition },
+    { active: false, deleted_at: new Date() },
+    { new: true }
+  ).lean();
   if (!item) throw new Error(`Item not found: ${id}`);
   return item;
 }
@@ -396,43 +451,47 @@ async function createInvoice(body) {
   const rawMethod = body.payment_method || 'cash';
   const payment_method = typeof rawMethod === 'string' ? rawMethod.toLowerCase() : 'cash';
 
-  // Calculate totals
-  let subtotal = 0;
-  let tax_amount = 0;
-  const processedItems = cartItems.map(ci => {
-    const unit_price = Number(ci.unit_price || ci.selling_price || 0);
-    const qty = Number(ci.qty || 1);
-    const line_total = Number((ci.subtotal !== undefined ? ci.subtotal : (unit_price * qty)).toFixed(2));
-    const gstRate = Number(ci.gst_rate || 12);
-    const taxable = line_total / (1 + gstRate / 100);
-    const tax = line_total - taxable;
-    subtotal += line_total;
-    tax_amount += tax;
-    return {
-      item_id: ci.id || ci.item_id,
-      id: ci.id || ci.item_id,
-      name: ci.name || 'Product',
-      sku: ci.sku || '',
-      barcode: ci.barcode || '',
-      category: ci.category || '',
-      qty,
-      unit_price,
-      selling_price: unit_price,
-      cost_price: Number(ci.cost_price || 0),
-      gst_rate: gstRate,
-      hsn_code: ci.hsn_code || '',
-      discount_pct: Number(ci.discount_pct || ci.discount_percent || 0),
-      line_total,
-      subtotal: line_total,
-      rack_name: ci.rack_name || 'Rack A-01'
-    };
-  });
+  // 1. Fetch store settings for GST configuration
+  const storeSettings = await getSettings();
 
+  // 2. Find or determine customer details
+  let custName = customer_name || 'Walk-in Retail Customer';
+  let custId = customer_id || 'CUST-00';
+  let existingCust = null;
+  if (customer_id && customer_id !== 'CUST-00') {
+    existingCust = await Customer.findOne({ id: customer_id }).lean();
+  } else if (customer_phone) {
+    existingCust = await Customer.findOne({ phone: customer_phone }).lean();
+  }
+
+  if (existingCust) {
+    custId = existingCust.id;
+    custName = existingCust.name;
+  }
+
+  const customerGstin = body.customer_gstin || existingCust?.gstin || '';
+  const customerState = body.customer_state || body.buyer_state || existingCust?.state || '';
+  const customerStateCode = body.customer_state_code || body.buyer_state_code || '';
+
+  // 3. Calculate GST using Central Engine
   const discount_amount = Number(body.discount_amount || body.discount_total || 0);
   const coupon_code = String(body.coupon_code || '').toUpperCase().trim();
-  const grand_total = Math.max(0, Math.round(subtotal - discount_amount));
 
-  // Determine amount paid / cash tendered
+  const gstResult = calculateGST(cartItems, {
+    seller_state: storeSettings.store_state || 'Maharashtra',
+    seller_state_code: storeSettings.store_state_code || '27',
+    seller_gstin: storeSettings.store_gstin || '',
+    buyer_state: customerState,
+    buyer_state_code: customerStateCode,
+    customer_gstin: customerGstin,
+    discount_amount,
+    default_tax_rate: storeSettings.default_tax_rate ?? 12,
+    default_tax_inclusive: storeSettings.tax_inclusive_default ?? false
+  });
+
+  const grand_total = gstResult.grand_total;
+
+  // 4. Determine amount paid / cash tendered
   let amount_paid = Number(body.amount_paid);
   if (isNaN(amount_paid) || amount_paid <= 0) {
     if (payment_method === 'cash') {
@@ -444,36 +503,40 @@ async function createInvoice(body) {
 
   const change_amount = Number(body.change_returned !== undefined ? body.change_returned : Math.max(0, amount_paid - grand_total));
 
-  // Find or determine customer
-  let custName = customer_name || 'Walk-in Retail Customer';
-  let custId = customer_id || 'CUST-00';
-  if (customer_phone && !customer_id) {
-    const existingCust = await Customer.findOne({ phone: customer_phone });
-    if (existingCust) {
-      custId = existingCust.id;
-      custName = existingCust.name;
-    }
-  }
-
+  // 5. Create Invoice record
   const invoice = new Invoice({
     invoice_no: await genInvoiceNo(),
     customer_id: custId,
     customer_name: custName,
     customer_phone: customer_phone || '',
+    customer_gstin: customerGstin,
     customer: {
       id: custId,
       name: custName,
-      phone: customer_phone || ''
+      phone: customer_phone || '',
+      gstin: customerGstin
     },
+    seller_state: gstResult.seller_state,
+    seller_state_code: gstResult.seller_state_code,
+    buyer_state: gstResult.buyer_state,
+    buyer_state_code: gstResult.buyer_state_code,
+    invoice_type: gstResult.invoice_type,
+    is_interstate: gstResult.is_interstate,
     cashier,
-    items: processedItems,
-    subtotal: Number(subtotal.toFixed(2)),
-    discount_amount,
-    discount_total: discount_amount,
+    items: gstResult.items,
+    subtotal: gstResult.subtotal,
+    discount_amount: gstResult.discount_amount,
+    discount_total: gstResult.discount_amount,
     coupon_code,
-    tax_amount: Number(tax_amount.toFixed(2)),
-    total_tax: Number(tax_amount.toFixed(2)),
+    taxable_amount: gstResult.taxable_amount,
+    cgst_amount: gstResult.cgst_amount,
+    sgst_amount: gstResult.sgst_amount,
+    igst_amount: gstResult.igst_amount,
+    tax_amount: gstResult.total_tax,
+    total_tax: gstResult.total_tax,
+    round_off: gstResult.round_off,
     grand_total,
+    tax_breakdown: gstResult.tax_breakdown,
     amount_paid,
     cash_tendered: amount_paid,
     change_amount,
@@ -572,32 +635,206 @@ async function getInvoiceByNo(invoice_no) {
 }
 
 async function processReturn(invoiceNo, item_id, qty, reason) {
-  // Support both calling conventions
-  let _invoiceNo = invoiceNo, _item_id = item_id, _qty = qty, _reason = reason;
-  if (typeof invoiceNo === 'object') {
-    _invoiceNo = invoiceNo.invoice_no;
-    _item_id = invoiceNo.item_id;
-    _qty = invoiceNo.qty;
-    _reason = invoiceNo.reason;
+  let payload = {};
+  if (typeof invoiceNo === 'object' && invoiceNo !== null) {
+    payload = invoiceNo;
+  } else {
+    payload = {
+      invoice_no: invoiceNo,
+      items: item_id ? [{ item_id, qty: Number(qty) || 1 }] : [],
+      reason: reason || 'Customer Return'
+    };
   }
 
-  const invoice = await Invoice.findOne({ invoice_no: _invoiceNo });
-  if (!invoice) throw new Error(`Invoice not found: ${_invoiceNo}`);
+  const invoiceNoTarget = payload.invoice_no;
+  if (!invoiceNoTarget) throw new Error('Invoice number is required for processing return');
 
-  // Restore stock
-  if (_item_id) {
-    const orConditions = [{ id: _item_id }];
-    if (mongoose.isValidObjectId(_item_id)) orConditions.push({ _id: _item_id });
-    await Item.findOneAndUpdate({ $or: orConditions }, { $inc: { stock_qty: Number(_qty) || 1 } });
+  const invoice = await Invoice.findOne({ invoice_no: invoiceNoTarget });
+  if (!invoice) throw new Error(`Invoice not found: ${invoiceNoTarget}`);
+
+  // Determine return items list
+  let requestedItems = Array.isArray(payload.items) && payload.items.length > 0 
+    ? payload.items 
+    : (payload.item_id ? [{ item_id: payload.item_id, qty: Number(payload.qty) || 1 }] : []);
+
+  if (requestedItems.length === 0) {
+    throw new Error('No items specified for return');
   }
 
-  invoice.status = 'returned';
+  const returnLineItems = [];
+  for (const reqItm of requestedItems) {
+    const itmId = reqItm.item_id || reqItm.id;
+    const itmQty = Math.max(1, Number(reqItm.qty) || 1);
+
+    // Find line item in original invoice
+    const originalLine = (invoice.items || []).find(i => 
+      (i.item_id && i.item_id === itmId) || 
+      (i.id && i.id === itmId) ||
+      (i.barcode && reqItm.barcode && i.barcode === reqItm.barcode) ||
+      (i.name && reqItm.name && i.name.toLowerCase() === reqItm.name.toLowerCase())
+    );
+
+    const unitPrice = Number(reqItm.unit_price !== undefined ? reqItm.unit_price : originalLine?.unit_price ?? originalLine?.selling_price ?? 0);
+    const gstRate = Number(originalLine?.gst_rate ?? reqItm.gst_rate ?? 12);
+    const isInclusive = originalLine?.tax_inclusive !== undefined ? Boolean(originalLine.tax_inclusive) : false;
+    const hsnCode = originalLine?.hsn_code || reqItm.hsn_code || '';
+    const itmName = originalLine?.name || reqItm.name || 'Returned Item';
+    const sku = originalLine?.sku || reqItm.sku || '';
+    const barcode = originalLine?.barcode || reqItm.barcode || '';
+
+    // Calculate line tax reversal
+    const lineGross = unitPrice * itmQty;
+    let taxable = 0;
+    let tax = 0;
+    if (isInclusive) {
+      taxable = Math.round((lineGross / (1 + gstRate / 100)) * 100) / 100;
+      tax = Math.round((lineGross - taxable) * 100) / 100;
+    } else {
+      taxable = lineGross;
+      tax = Math.round((taxable * (gstRate / 100)) * 100) / 100;
+    }
+
+    const isInterstate = Boolean(invoice.is_interstate);
+    const cgstRate = isInterstate ? 0 : gstRate / 2;
+    const sgstRate = isInterstate ? 0 : gstRate / 2;
+    const igstRate = isInterstate ? gstRate : 0;
+    const cgstAmt = isInterstate ? 0 : Math.round((tax / 2) * 100) / 100;
+    const sgstAmt = isInterstate ? 0 : Math.round((tax / 2) * 100) / 100;
+    const igstAmt = isInterstate ? tax : 0;
+
+    returnLineItems.push({
+      item_id: itmId,
+      id: itmId,
+      name: itmName,
+      sku,
+      barcode,
+      hsn_code: hsnCode,
+      qty: itmQty,
+      unit_price: unitPrice,
+      gst_rate: gstRate,
+      tax_inclusive: isInclusive,
+      taxable_amount: taxable,
+      cgst_rate: cgstRate,
+      sgst_rate: sgstRate,
+      igst_rate: igstRate,
+      cgst_amount: cgstAmt,
+      sgst_amount: sgstAmt,
+      igst_amount: igstAmt,
+      tax_amount: tax,
+      line_total: isInclusive ? lineGross : (taxable + tax)
+    });
+
+    // Restore inventory stock
+    if (itmId || barcode) {
+      const orConditions = [];
+      if (itmId) orConditions.push({ id: itmId });
+      if (barcode) orConditions.push({ barcode });
+      if (itmId && mongoose.isValidObjectId(itmId)) orConditions.push({ _id: itmId });
+      await Item.findOneAndUpdate({ $or: orConditions }, { $inc: { stock_qty: itmQty } });
+    }
+  }
+
+  // Aggregate reversed amounts
+  const subtotalReversed = returnLineItems.reduce((s, i) => s + (i.unit_price * i.qty), 0);
+  const taxableReversed = returnLineItems.reduce((s, i) => s + (i.taxable_amount || 0), 0);
+  const cgstReversed = returnLineItems.reduce((s, i) => s + (i.cgst_amount || 0), 0);
+  const sgstReversed = returnLineItems.reduce((s, i) => s + (i.sgst_amount || 0), 0);
+  const igstReversed = returnLineItems.reduce((s, i) => s + (i.igst_amount || 0), 0);
+  const taxReversed = cgstReversed + sgstReversed + igstReversed;
+  const rawRefund = returnLineItems.reduce((s, i) => s + (i.line_total || 0), 0);
+  const refundAmount = Number(payload.refund_amount) > 0 ? Number(payload.refund_amount) : Math.round(rawRefund);
+  const roundOffReversed = Math.round((refundAmount - rawRefund) * 100) / 100;
+
+  // Generate atomic Credit Note number
+  const creditNoteNo = await genCreditNoteNo();
+
+  // Create & persist SalesReturn document
+  const returnDoc = new SalesReturn({
+    id: genId('RET'),
+    credit_note_no: creditNoteNo,
+    original_invoice_no: invoice.invoice_no,
+    customer_id: invoice.customer_id,
+    customer_name: invoice.customer_name || 'Walk-in Retail Customer',
+    customer_phone: invoice.customer_phone || '',
+    customer_gstin: invoice.customer_gstin || '',
+    customer: invoice.customer || {},
+    seller_state: invoice.seller_state || '',
+    seller_state_code: invoice.seller_state_code || '',
+    buyer_state: invoice.buyer_state || '',
+    buyer_state_code: invoice.buyer_state_code || '',
+    is_interstate: Boolean(invoice.is_interstate),
+    items: returnLineItems,
+    subtotal_reversed: subtotalReversed,
+    taxable_amount_reversed: taxableReversed,
+    cgst_amount_reversed: cgstReversed,
+    sgst_amount_reversed: sgstReversed,
+    igst_amount_reversed: igstReversed,
+    tax_reversed: taxReversed,
+    round_off_reversed: roundOffReversed,
+    refund_amount: refundAmount,
+    refund_mode: payload.refund_mode || 'Cash',
+    is_exchange: Boolean(payload.is_exchange),
+    exchange_notes: payload.exchange_notes || '',
+    reason: payload.reason || 'Customer Return',
+    cashier: payload.cashier || invoice.cashier || 'Admin Cashier',
+    date: new Date().toISOString()
+  });
+
+  await returnDoc.save();
+
+  // Determine whether invoice is partially returned or fully returned
+  const totalOriginalQty = (invoice.items || []).reduce((s, i) => s + (Number(i.qty) || 1), 0);
+  const allReturnsForInv = await SalesReturn.find({ original_invoice_no: invoice.invoice_no }).lean();
+  const totalReturnedQty = allReturnsForInv.reduce((s, r) => 
+    s + (Array.isArray(r.items) ? r.items.reduce((is, it) => is + (Number(it.qty) || 1), 0) : 0), 0
+  );
+
+  invoice.status = totalReturnedQty >= totalOriginalQty ? 'returned' : 'partial_return';
   await invoice.save();
-  return invoice.toObject();
+
+  // If refunded in cash, deduct from active cashier shift
+  if (payload.refund_mode === 'Cash') {
+    const shift = await Shift.findOne({ status: 'OPEN' });
+    if (shift) {
+      shift.cash_refunds = (shift.cash_refunds || 0) + refundAmount;
+      shift.expected_cash = Math.max(0, (shift.expected_cash || 0) - refundAmount);
+      await shift.save();
+    }
+  }
+
+  return returnDoc.toObject();
 }
 
 async function getReturns() {
-  return Invoice.find({ status: { $in: ['returned', 'partial_return'] } }).lean();
+  const returns = await SalesReturn.find().sort({ created_at: -1 }).lean();
+  if (returns && returns.length > 0) {
+    return returns;
+  }
+  // Fallback for any legacy invoices marked returned
+  const legacyInvoices = await Invoice.find({ status: { $in: ['returned', 'partial_return'] } }).lean();
+  return legacyInvoices.map(inv => ({
+    id: inv.id || inv._id,
+    credit_note_no: `CN-LEGACY-${(inv.invoice_no || '').slice(-4)}`,
+    original_invoice_no: inv.invoice_no,
+    customer: inv.customer || { name: inv.customer_name },
+    customer_name: inv.customer_name,
+    customer_phone: inv.customer_phone,
+    refund_amount: inv.grand_total || 0,
+    refund_mode: inv.payment_method || 'Cash',
+    reason: 'Legacy Return',
+    is_exchange: false,
+    created_at: inv.created_at || inv.date
+  }));
+}
+
+async function getCreditNote(creditNoteNo) {
+  if (!creditNoteNo) return null;
+  return await SalesReturn.findOne({
+    $or: [
+      { credit_note_no: creditNoteNo },
+      { id: creditNoteNo }
+    ]
+  }).lean();
 }
 
 // ─── SUPPLIERS ───────────────────────────────────────────────────────────────
@@ -608,13 +845,25 @@ async function getSuppliers() {
 
 async function createSupplier(body) {
   const id = body.id || genId('SUP');
-  const sup = new Supplier({ ...body, id });
+  const cleanPhone = body.phone || body.contact || '';
+  const sup = new Supplier({ 
+    ...body, 
+    id,
+    phone: cleanPhone,
+    contact: cleanPhone
+  });
   await sup.save();
   return sup.toObject();
 }
 
 async function updateSupplier(id, updates) {
-  const sup = await Supplier.findOneAndUpdate({ id }, updates, { new: true }).lean();
+  const cleanPhone = updates.phone || updates.contact;
+  const cleanUpdates = { ...updates };
+  if (cleanPhone !== undefined) {
+    cleanUpdates.phone = cleanPhone;
+    cleanUpdates.contact = cleanPhone;
+  }
+  const sup = await Supplier.findOneAndUpdate({ id }, cleanUpdates, { new: true }).lean();
   if (!sup) throw new Error(`Supplier not found: ${id}`);
   return sup;
 }
@@ -1064,62 +1313,66 @@ async function getReports(dateRange = 'all', startDate = null, endDate = null) {
 }
 
 async function getSalesChartData() {
-  // Last 7 days sales by day
-  const days = [];
   const now = new Date();
+  const sevenDaysAgo = new Date(now);
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+  sevenDaysAgo.setHours(0, 0, 0, 0);
+
+  // Single aggregation for daily sales over last 7 days (replaces 7 sequential queries)
+  const dailyAgg = await Invoice.aggregate([
+    { $match: { created_at: { $gte: sevenDaysAgo }, status: 'completed' } },
+    {
+      $group: {
+        _id: { $dateToString: { format: '%Y-%m-%d', date: '$created_at', timezone: '+05:30' } },
+        sales: { $sum: '$grand_total' },
+        count: { $sum: 1 }
+      }
+    },
+    { $sort: { _id: 1 } }
+  ]);
+
+  // Build a map keyed by date string for quick lookup
+  const aggMap = {};
+  for (const d of dailyAgg) aggMap[d._id] = { sales: d.sales, count: d.count };
+
+  // Fill in all 7 days (including zeros for days with no sales)
+  const days = [];
   for (let i = 6; i >= 0; i--) {
     const d = new Date(now);
     d.setDate(d.getDate() - i);
     d.setHours(0, 0, 0, 0);
-    const next = new Date(d);
-    next.setDate(next.getDate() + 1);
-    const dayInvoices = await Invoice.find({
-      created_at: { $gte: d, $lt: next },
-      status: 'completed'
-    }).lean();
+    const dateStr = d.toISOString().slice(0, 10);
+    const entry = aggMap[dateStr] || { sales: 0, count: 0 };
     days.push({
-      date: d.toISOString().slice(0, 10),
+      date: dateStr,
       label: d.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric' }),
-      sales: dayInvoices.reduce((s, inv) => s + inv.grand_total, 0),
-      count: dayInvoices.length
+      sales: Math.round(entry.sales),
+      count: entry.count
     });
   }
 
-  // Top 5 items by revenue
-  const allInvoices = await Invoice.find({ status: 'completed' }).lean();
-  const itemMap = {};
-  for (const inv of allInvoices) {
-    for (const it of inv.items) {
-      const key = it.item_id || it.name;
-      if (!itemMap[key]) itemMap[key] = { name: it.name, revenue: 0, qty: 0 };
-      itemMap[key].revenue += it.line_total || 0;
-      itemMap[key].qty += it.qty || 1;
-    }
-  }
-  const top_items = Object.values(itemMap).sort((a, b) => b.revenue - a.revenue).slice(0, 5);
+  // Top 5 items by revenue — single aggregation
+  const topItemsAgg = await Invoice.aggregate([
+    { $match: { status: 'completed' } },
+    { $unwind: '$items' },
+    {
+      $group: {
+        _id: { $ifNull: ['$items.item_id', '$items.name'] },
+        name: { $first: '$items.name' },
+        revenue: { $sum: { $ifNull: ['$items.line_total', 0] } },
+        qty: { $sum: { $ifNull: ['$items.qty', 1] } }
+      }
+    },
+    { $sort: { revenue: -1 } },
+    { $limit: 5 }
+  ]);
+  const top_items = topItemsAgg.map(t => ({ name: t.name, revenue: Math.round(t.revenue), qty: t.qty }));
 
   return { daily_sales: days, top_items };
 }
 
-// ─── ATTENDANCE (simple) ─────────────────────────────────────────────────────
-
-const _attendance = [];
-function getAttendance() { return _attendance; }
-function recordAttendance(body) {
-  const r = { id: genId('ATT'), ...body, timestamp: new Date().toISOString() };
-  _attendance.push(r);
-  return r;
-}
-
-// ─── ORDERS (online/store pickup) ────────────────────────────────────────────
-
-const _orders = [];
-function getOrders() { return _orders; }
-function updateOrderStatus(id, status) {
-  const o = _orders.find(o => o.id === id);
-  if (o) { o.status = status; return o; }
-  throw new Error(`Order not found: ${id}`);
-}
+// ─── ATTENDANCE + ORDERS (stubs defined below near exports) ──────────────────
+// Removed in-memory stubs — async stub implementations appear near the exports.
 
 // ─── BACKUP ──────────────────────────────────────────────────────────────────
 
@@ -1281,72 +1534,30 @@ async function getVendorGSTReport() {
 }
 
 async function getAllBranchSales(dateRange = 'month', startDate = null, endDate = null) {
+  // Single-store system — returns real data for this store only.
+  // Multi-branch support is a future phase; no fake data is generated.
+  const settings = await getSettings();
   const reports = await getReports(dateRange, startDate, endDate);
   const mainRev = reports.total_revenue || 0;
   const mainOrders = reports.total_invoices || 0;
 
-  const branches = [
-    {
-      id: 'BR-01',
-      name: 'Main Flagship Store (Horizon Galleria)',
-      location: 'MG Road, Pune, Maharashtra',
-      manager: 'Sunil Mehta',
-      is_primary: true,
-      revenue: Math.round(mainRev),
-      orders: mainOrders,
-      avg_ticket: mainOrders > 0 ? Math.round(mainRev / mainOrders) : 0,
-      share_pct: mainRev > 0 ? 100 : 0,
-      growth_pct: '+18.4%'
-    },
-    {
-      id: 'BR-02',
-      name: 'Downtown High Street Express',
-      location: 'FC Road, Shivaji Nagar, Pune',
-      manager: 'Pooja Verma',
-      is_primary: false,
-      revenue: Math.round(mainRev * 0.74),
-      orders: Math.round(mainOrders * 0.8),
-      avg_ticket: mainOrders > 0 ? Math.round((mainRev * 0.74) / (mainOrders * 0.8 || 1)) : 0,
-      share_pct: 0,
-      growth_pct: '+12.1%'
-    },
-    {
-      id: 'BR-03',
-      name: 'Phoenix Marketcity Mall Outlet',
-      location: 'Viman Nagar, Pune',
-      manager: 'Amit Deshmukh',
-      is_primary: false,
-      revenue: Math.round(mainRev * 1.15),
-      orders: Math.round(mainOrders * 1.2),
-      avg_ticket: mainOrders > 0 ? Math.round((mainRev * 1.15) / (mainOrders * 1.2 || 1)) : 0,
-      share_pct: 0,
-      growth_pct: '+24.5%'
-    },
-    {
-      id: 'BR-04',
-      name: 'Airport Terminal 2 Transit Kiosk',
-      location: 'Departure Concourse, Lohegaon',
-      manager: 'Kavita Nair',
-      is_primary: false,
-      revenue: Math.round(mainRev * 0.42),
-      orders: Math.round(mainOrders * 0.45),
-      avg_ticket: mainOrders > 0 ? Math.round((mainRev * 0.42) / (mainOrders * 0.45 || 1)) : 0,
-      share_pct: 0,
-      growth_pct: '+9.3%'
-    }
-  ];
-
-  const totalNetworkRev = branches.reduce((s, b) => s + b.revenue, 0);
-  branches.forEach(b => {
-    b.share_pct = totalNetworkRev > 0 ? Math.round((b.revenue / totalNetworkRev) * 100) : 0;
-  });
+  const branch = {
+    id: 'BR-01',
+    name: settings.store_name || 'Main Store',
+    location: settings.store_address || '',
+    is_primary: true,
+    revenue: Math.round(mainRev),
+    orders: mainOrders,
+    avg_ticket: mainOrders > 0 ? Math.round(mainRev / mainOrders) : 0,
+    share_pct: 100
+  };
 
   return {
     period: dateRange,
-    total_network_revenue: totalNetworkRev,
-    total_network_orders: branches.reduce((s, b) => s + b.orders, 0),
-    active_branches_count: branches.length,
-    branches
+    total_network_revenue: Math.round(mainRev),
+    total_network_orders: mainOrders,
+    active_branches_count: 1,
+    branches: [branch]
   };
 }
 
@@ -1509,7 +1720,7 @@ async function getHubStats() {
     sales_gst_total: Math.round(totalTax),
     vendor_gst_itc_records: grns.length,
     sales_details_invoices: invoices.length,
-    all_branch_count: 4,
+    all_branch_count: 1,
     sales_metrics_margin: totalRev > 0 ? Math.round(((totalRev - totalTax) / totalRev) * 100) : 0,
     customer_analysis_count: customers.length,
     backup_invoices_count: invoices.length,
@@ -1552,12 +1763,12 @@ async function updateOrderStatus(id, status) {
 module.exports = {
   connectDB,
   isDBConnected,
-  getSettings, updateSettings,
-  getCategories,
+  getSettings, updateSettings, calculateGST,
+  getCategories, createCategory, updateCategory, deleteCategory,
   getItems, getItemByBarcode, createItem, updateItem, deleteItem, adjustStock,
   getCustomers, createCustomer, updateCustomer, deleteCustomer, rechargeWallet, getCustomerHistory,
   getActiveShift, openShift, closeShift,
-  createInvoice, getInvoices, getInvoiceByNo, processReturn, getReturns,
+  createInvoice, getInvoices, getInvoiceByNo, processReturn, getReturns, getCreditNote, genCreditNoteNo,
   getSuppliers, createSupplier, updateSupplier, deleteSupplier,
   getGRNRecords, createGRN,
   getPurchaseOrders, createPurchaseOrder, updatePurchaseOrderStatus,

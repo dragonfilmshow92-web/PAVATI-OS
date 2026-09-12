@@ -1,16 +1,16 @@
-{
+﻿{
   "settings": {
-    "store_name": "Tioras Fashion Studio & Retail",
+    "store_name": "PAVATI OS STUDIO & Retail",
     "tagline": "Apparel, Fabrics & Everyday Retail",
     "address": "Shop 14, High Street Arcade, Market Central, India",
     "phone": "+91 98765 43210",
-    "email": "contact@tiorasfashion.com",
+    "email": "contact@PAVATI OSfashion.com",
     "gstin": "27AABCT1234F1Z5",
     "upi_id": "7795208996-3@ybl",
     "upi_merchant_name": "PRASHANT HIREMATH",
     "currency_symbol": "₹",
     "receipt_header": "GST INVOICE / CASH MEMO",
-    "receipt_footer": "Thank you for visiting Tioras Fashion Studio!\nExchange within 7 days with original bill.\nFollow us on Instagram: @tioras_studio",
+    "receipt_footer": "Thank you for visiting PAVATI OS STUDIO!\nExchange within 7 days with original bill.\nFollow us on Instagram: @PAVATI OS_studio",
     "default_tax_rate": 12,
     "store_tagline": "wear your imagination",
     "store_address": "Talikoti",

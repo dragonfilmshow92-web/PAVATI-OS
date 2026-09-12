@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { api } from '../api';
 import { 
@@ -120,7 +120,7 @@ export default function DashboardPage() {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span className="hero-brand-pill">
-              <Sparkles size={12} /> Tioras Fashion & Retail • Flagship Store
+              <Sparkles size={12} /> PAVATI OS Fashion & Retail • Flagship Store
             </span>
             <span className="hero-meta-pill">
               <span className="pulse-dot"></span> POS Active Online

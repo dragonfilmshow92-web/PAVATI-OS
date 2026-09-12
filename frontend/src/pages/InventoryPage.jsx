@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 
 export default function InventoryPage() {
-  const { items, setModalState, refreshItems, showToast, setCurrentPage } = useApp();
+  const { items, categories, setModalState, refreshItems, showToast, setCurrentPage } = useApp();
   const [search, setSearch] = useState('');
   const [catFilter, setCatFilter] = useState('all');
 
@@ -41,17 +41,103 @@ export default function InventoryPage() {
     }
   };
 
+  // Inventory KPIs
+  const totalSkus = items.length;
+  const totalUnits = items.reduce((acc, i) => acc + (Number(i.stock_qty) || 0), 0);
+  const totalValuation = items.reduce((acc, i) => acc + ((Number(i.cost_price) || Number(i.selling_price) || 0) * (Number(i.stock_qty) || 0)), 0);
+  const lowStockCount = items.filter(i => (Number(i.stock_qty) || 0) <= (Number(i.reorder_level) || 5) && (Number(i.stock_qty) || 0) > 0).length;
+  const outOfStockCount = items.filter(i => !i.stock_qty || Number(i.stock_qty) <= 0).length;
+
   return (
-    <div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      {/* Executive Inventory KPIs */}
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', 
+        gap: '12px' 
+      }}>
+        <div style={{ 
+          background: 'var(--bg-surface)', 
+          border: '1px solid var(--border-color)', 
+          borderRadius: '12px', 
+          padding: '14px 18px',
+          boxShadow: 'var(--shadow-sm)'
+        }}>
+          <div style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.6px' }}>
+            Total SKUs
+          </div>
+          <div style={{ fontSize: '24px', fontWeight: '800', fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', marginTop: '4px' }}>
+            {totalSkus}
+          </div>
+          <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+            Active catalog items
+          </div>
+        </div>
+
+        <div style={{ 
+          background: 'var(--bg-surface)', 
+          border: '1px solid var(--border-color)', 
+          borderRadius: '12px', 
+          padding: '14px 18px',
+          boxShadow: 'var(--shadow-sm)'
+        }}>
+          <div style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.6px' }}>
+            Stock On Hand
+          </div>
+          <div style={{ fontSize: '24px', fontWeight: '800', fontFamily: 'var(--font-mono)', color: 'var(--accent-blue)', marginTop: '4px' }}>
+            {totalUnits.toLocaleString('en-IN')} <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-muted)' }}>pcs</span>
+          </div>
+          <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+            Total physical inventory
+          </div>
+        </div>
+
+        <div style={{ 
+          background: 'var(--bg-surface)', 
+          border: '1px solid var(--border-color)', 
+          borderRadius: '12px', 
+          padding: '14px 18px',
+          boxShadow: 'var(--shadow-sm)'
+        }}>
+          <div style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.6px' }}>
+            Inventory Value
+          </div>
+          <div style={{ fontSize: '24px', fontWeight: '800', fontFamily: 'var(--font-mono)', color: 'var(--accent-emerald)', marginTop: '4px' }}>
+            ₹{Math.round(totalValuation).toLocaleString('en-IN')}
+          </div>
+          <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+            At current cost valuation
+          </div>
+        </div>
+
+        <div style={{ 
+          background: 'var(--bg-surface)', 
+          border: lowStockCount > 0 ? '1px solid rgba(245, 158, 11, 0.4)' : '1px solid var(--border-color)', 
+          borderRadius: '12px', 
+          padding: '14px 18px',
+          boxShadow: 'var(--shadow-sm)'
+        }}>
+          <div style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', color: lowStockCount > 0 ? 'var(--accent-amber)' : 'var(--text-muted)', letterSpacing: '0.6px' }}>
+            Low Stock Alerts
+          </div>
+          <div style={{ fontSize: '24px', fontWeight: '800', fontFamily: 'var(--font-mono)', color: lowStockCount > 0 ? 'var(--accent-amber)' : 'var(--text-primary)', marginTop: '4px' }}>
+            {lowStockCount}
+          </div>
+          <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+            {outOfStockCount > 0 ? `${outOfStockCount} out of stock` : 'Optimal stock levels'}
+          </div>
+        </div>
+      </div>
+
       {/* Top Header & Actions */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flex: 1, minWidth: 'min(100%, 280px)', maxWidth: '600px', flexWrap: 'wrap' }}>
-          <div style={{ position: 'relative', flex: 1, minWidth: '180px' }}>
-            <Search size={16} style={{ position: 'absolute', left: '12px', top: '11px', color: 'var(--text-muted)' }} />
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flex: 1, minWidth: 'min(100%, 280px)', maxWidth: '640px', flexWrap: 'wrap' }}>
+          <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
+            <Search size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-muted)' }} />
             <input 
               type="text" 
               className="form-control" 
-              style={{ paddingLeft: '36px', fontSize: '13px' }}
+              style={{ paddingLeft: '38px', fontSize: '13px' }}
               placeholder="Search by Product Name, Barcode, SKU, or Rack Location..." 
               value={search} 
               onChange={e => setSearch(e.target.value)} 
@@ -64,11 +150,19 @@ export default function InventoryPage() {
             onChange={e => setCatFilter(e.target.value)}
           >
             <option value="all">All Categories</option>
-            <option value="shirts">Shirts</option>
-            <option value="trousers">Trousers</option>
-            <option value="suits">Suits</option>
-            <option value="ethnic">Ethnic</option>
-            <option value="accessories">Accessories</option>
+            {categories && categories.length > 0 ? (
+              categories.filter(c => c.id !== 'all').map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))
+            ) : (
+              <>
+                <option value="shirts">Shirts</option>
+                <option value="trousers">Trousers</option>
+                <option value="suits">Suits</option>
+                <option value="ethnic">Ethnic</option>
+                <option value="accessories">Accessories</option>
+              </>
+            )}
           </select>
         </div>
 
@@ -118,8 +212,21 @@ export default function InventoryPage() {
 
                     <td>
                       <div style={{ fontWeight: '800' }}>{item.name}</div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                        {item.uom || 'Pcs'} | GST: {item.gst_rate || 12}%
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap', marginTop: '2px' }}>
+                        <span>{item.uom || 'Pcs'}</span>
+                        <span>•</span>
+                        <span>GST: {item.gst_rate ?? 12}%</span>
+                        {item.tax_inclusive && (
+                          <span style={{ fontSize: '9.5px', padding: '1px 5px', borderRadius: '3px', background: 'rgba(59, 130, 246, 0.15)', color: 'var(--accent-blue)', fontWeight: '700' }}>
+                            Tax Incl.
+                          </span>
+                        )}
+                        {item.hsn_code && (
+                          <>
+                            <span>•</span>
+                            <span style={{ fontFamily: 'var(--font-mono)' }}>HSN: {item.hsn_code}</span>
+                          </>
+                        )}
                       </div>
                     </td>
 

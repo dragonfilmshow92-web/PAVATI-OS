@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
+import AmbientBackdrop from './components/AmbientBackdrop';
 
 import ProductModal from './components/Modals/ProductModal';
 import PriceEditModal from './components/Modals/PriceEditModal';
@@ -85,6 +86,9 @@ function AppLayout() {
 
   return (
     <div className="app-shell">
+      {/* Hardware-Accelerated Ambient Aurora Backdrop */}
+      <AmbientBackdrop />
+
       {/* Mobile Drawer Backdrop */}
       <div 
         className={`sidebar-backdrop ${sidebarOpen ? 'active' : ''}`} 

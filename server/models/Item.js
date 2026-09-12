@@ -17,6 +17,7 @@ const ItemSchema = new mongoose.Schema({
   mrp: { type: Number, default: 0 },
   gst_rate: { type: Number, default: 12 },
   hsn_code: { type: String, default: '' },
+  tax_inclusive: { type: Boolean, default: false },
   stock_qty: { type: Number, default: 0 },
   reorder_level: { type: Number, default: 5 },
   uom: { type: String, default: 'Pcs' },
@@ -26,6 +27,7 @@ const ItemSchema = new mongoose.Schema({
   min_stock: { type: Number, default: 0 },
   max_stock: { type: Number, default: 0 },
   active: { type: Boolean, default: true },
+  deleted_at: { type: Date, default: null },
   created_at: { type: Date, default: Date.now },
   updated_at: { type: Date, default: Date.now }
 }, { collection: 'items' });

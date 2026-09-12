@@ -1,7 +1,7 @@
 {
-  "name": "retail-pos",
+  "name": "pavati-os",
   "version": "2.0.0",
-  "description": "Production-grade Retail POS with MongoDB, Dynamic UPI QR Billing, Real-Time Inventory, and Financial Reports",
+  "description": "PAVATI OS — Production-grade Retail POS with MongoDB, Dynamic UPI QR Billing, Real-Time Inventory, and Financial Reports",
   "main": "server/server.js",
   "scripts": {
     "start": "node server/server.js",

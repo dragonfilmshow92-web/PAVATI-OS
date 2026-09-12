@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
-import { X, Printer, CheckCircle, Settings2 } from 'lucide-react';
+import { X, Printer, CheckCircle, Settings2, FileText } from 'lucide-react';
 import JsBarcode from 'jsbarcode';
 import { printThermalReceipt } from '../../utils/printReceipt';
+import { printA4Invoice } from '../../utils/printA4Invoice';
 
 export default function ReceiptModal() {
   const { modalState, setModalState, settings } = useApp();
@@ -184,7 +185,7 @@ export default function ReceiptModal() {
               <div style={{ textAlign: 'center', marginBottom: '6px' }}>
                 <img 
                   src={settings.logo_url} 
-                  alt={settings.store_name || "TIORAS"} 
+                  alt={settings.store_name || "PAVATI OS"} 
                   style={{ 
                     maxHeight: is58 ? '45px' : '60px', 
                     maxWidth: is58 ? '140px' : '180px', 
@@ -200,10 +201,10 @@ export default function ReceiptModal() {
             {/* Store Name & Info */}
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontWeight: '900', fontSize: is58 ? '13px' : '15px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                {settings.store_name || "TIORAS"}
+                {settings.store_name || "PAVATI OS"}
               </div>
               <div style={{ fontSize: is58 ? '8.5px' : '10px', fontWeight: 'bold' }}>
-                {settings.store_tagline || settings.tagline || "Fashion Studio"}
+                {settings.store_tagline || settings.tagline || "Powered by PAVATI OS"}
               </div>
               {settings.store_address && (
                 <div style={{ fontSize: is58 ? '8px' : '9.5px', color: '#333' }}>
@@ -337,14 +338,25 @@ export default function ReceiptModal() {
             New Sale (Esc)
           </button>
 
-          <button 
-            type="button" 
-            className="btn btn-primary" 
-            onClick={handlePrint}
-            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 18px', fontWeight: '700' }}
-          >
-            <Printer size={16} /> Print Bill ({paperSize})
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button 
+              type="button" 
+              className="btn btn-secondary" 
+              onClick={() => printA4Invoice(invoice, settings)}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '700' }}
+              title="Print standard A4 GST Tax Invoice"
+            >
+              <FileText size={15} /> A4 Tax Invoice
+            </button>
+            <button 
+              type="button" 
+              className="btn btn-primary" 
+              onClick={handlePrint}
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 18px', fontWeight: '700' }}
+            >
+              <Printer size={16} /> Print Thermal ({paperSize})
+            </button>
+          </div>
         </div>
       </div>
     </div>

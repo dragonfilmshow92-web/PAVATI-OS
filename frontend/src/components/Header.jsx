@@ -10,12 +10,20 @@ import {
   User, 
   Settings, 
   RotateCw, 
-  LogOut 
+  LogOut,
+  Volume2,
+  VolumeX,
+  Receipt,
+  Sparkles,
+  ShieldCheck
 } from 'lucide-react';
+import soundFx from '../utils/sounds';
 
 export default function Header() {
   const { currentPage, setCurrentPage, settings, activeShift, setModalState, toggleSidebar, sidebarOpen, showToast } = useApp();
   const [timeStr, setTimeStr] = useState('');
+  const [soundActive, setSoundActive] = useState(() => soundFx.isEnabled());
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     const updateTime = () => {
@@ -27,23 +35,23 @@ export default function Header() {
     return () => clearInterval(interval);
   }, []);
 
-  const pageNames = {
-    dashboard: "Dashboard Overview",
-    pos: "Point of Sale",
-    inventory: "Stock Inventory",
-    receiving: "Stock Receiving",
-    listing: "New Item Listing",
-    barcode: "Barcode Label Generator",
-    suppliers: "Suppliers & Vendors",
-    invoices: "Sales Invoices Archive",
-    customers: "Customers & Khata Ledger",
-    reports: "Executive Reports & Operations Hub",
-    settings: "Store Profile & Cloud Sync",
-    returns: "Returns & Exchanges",
-    "purchase-orders": "Purchase Orders",
-    coupons: "Coupons & Discounts",
-    analytics: "Sales Analytics & Charts",
-    expenses: "Store Expenses"
+  const pageMeta = {
+    dashboard: { title: "Dashboard Overview", icon: Home },
+    pos: { title: "Point of Sale", icon: Receipt },
+    inventory: { title: "Stock Inventory", icon: null },
+    receiving: { title: "Stock Receiving", icon: null },
+    listing: { title: "New Item Listing", icon: null },
+    barcode: { title: "Barcode Label Generator", icon: null },
+    suppliers: { title: "Suppliers & Vendors", icon: null },
+    invoices: { title: "Sales Invoices Archive", icon: null },
+    customers: { title: "Customers & Khata Ledger", icon: null },
+    reports: { title: "Executive Reports & Operations Hub", icon: null },
+    settings: { title: "Store Profile & Cloud Sync", icon: Settings },
+    returns: { title: "Returns & Exchanges", icon: null },
+    "purchase-orders": { title: "Purchase Orders", icon: null },
+    coupons: { title: "Coupons & Discounts", icon: null },
+    analytics: { title: "Sales Analytics & Charts", icon: null },
+    expenses: { title: "Store Expenses", icon: null }
   };
 
   const toggleFullscreen = () => {
@@ -54,153 +62,136 @@ export default function Header() {
     }
   };
 
+  const handleRefresh = () => {
+    setRefreshing(true);
+    showToast("Syncing with MongoDB Atlas...", "info");
+    setTimeout(() => {
+      window.location.reload();
+    }, 350);
+  };
+
+  const currentMeta = pageMeta[currentPage] || { title: "Store Management" };
+
   return (
     <header className="top-action-bar">
+      {/* Left: Mobile Toggle & Page Breadcrumb */}
       <div className="top-left">
         <button 
-          className="mobile-menu-btn btn btn-secondary btn-icon" 
+          className="mobile-menu-btn" 
           onClick={toggleSidebar}
           aria-label={sidebarOpen ? "Close Navigation" : "Open Navigation"}
           title={sidebarOpen ? "Collapse Menu" : "Expand Menu"}
         >
-          {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+          {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
         </button>
-        <h1 className="page-title">
-          {pageNames[currentPage] || "Store Management"}
-        </h1>
+
+        <div className="page-breadcrumb">
+          <span className="breadcrumb-glow-dot"></span>
+          <h1 className="page-title">
+            {currentMeta.title}
+          </h1>
+        </div>
       </div>
 
-      <div className="top-right" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-        {/* Mockup Action Nav: Home, Profile, Settings, Refresh, Log out */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginRight: '6px' }}>
+      {/* Center & Right: Live Telemetry & Command Pills */}
+      <div className="top-right">
+        {/* Quick Nav Pills */}
+        <div className="header-nav-pills">
           <button 
             type="button" 
+            className={`header-pill-btn ${currentPage === 'dashboard' ? 'active' : ''}`}
             onClick={() => setCurrentPage('dashboard')}
-            style={{ 
-              background: 'none', 
-              border: 'none', 
-              cursor: 'pointer', 
-              display: 'inline-flex', 
-              alignItems: 'center', 
-              gap: '5px', 
-              color: 'var(--text-primary)', 
-              fontSize: '12.5px', 
-              fontWeight: '700' 
-            }}
-            title="Go to Home Dashboard"
+            title="Dashboard Overview [F1]"
           >
-            <Home size={15} color="#10b981" />
-            <span>Home</span>
+            <Home size={14} />
+            <span>Dashboard</span>
           </button>
 
           <button 
             type="button" 
-            onClick={() => setModalState({ type: 'profile', data: null })}
-            style={{ 
-              background: 'none', 
-              border: 'none', 
-              cursor: 'pointer', 
-              display: 'inline-flex', 
-              alignItems: 'center', 
-              gap: '5px', 
-              color: 'var(--text-primary)', 
-              fontSize: '12.5px', 
-              fontWeight: '700' 
-            }}
-            title="Cashier Profile"
+            className={`header-pill-btn ${currentPage === 'pos' ? 'active' : ''}`}
+            onClick={() => setCurrentPage('pos')}
+            title="Point of Sale Counter [F2]"
           >
-            <User size={15} color="#8b5cf6" />
-            <span>Profile</span>
-          </button>
-
-          <button 
-            type="button" 
-            onClick={() => setCurrentPage('settings')}
-            style={{ 
-              background: 'none', 
-              border: 'none', 
-              cursor: 'pointer', 
-              display: 'inline-flex', 
-              alignItems: 'center', 
-              gap: '5px', 
-              color: 'var(--text-primary)', 
-              fontSize: '12.5px', 
-              fontWeight: '700' 
-            }}
-            title="Store Settings"
-          >
-            <Settings size={15} color="#f59e0b" />
-            <span>Settings</span>
-          </button>
-
-          <button 
-            type="button" 
-            onClick={() => {
-              showToast("Refreshing live store records...", "info");
-              window.location.reload();
-            }}
-            style={{ 
-              background: 'none', 
-              border: 'none', 
-              cursor: 'pointer', 
-              display: 'inline-flex', 
-              alignItems: 'center', 
-              gap: '5px', 
-              color: 'var(--text-primary)', 
-              fontSize: '12.5px', 
-              fontWeight: '700' 
-            }}
-            title="Refresh Store Data"
-          >
-            <RotateCw size={15} color="#0d9488" />
-            <span>Refresh</span>
-          </button>
-
-          <button 
-            type="button" 
-            onClick={() => {
-              if (confirm("Lock register / Log out of session?")) {
-                showToast("Logged out successfully. Register locked.", "info");
-                setCurrentPage('dashboard');
-              }
-            }}
-            style={{ 
-              background: 'none', 
-              border: 'none', 
-              cursor: 'pointer', 
-              display: 'inline-flex', 
-              alignItems: 'center', 
-              gap: '5px', 
-              color: '#ef4444', 
-              fontSize: '12.5px', 
-              fontWeight: '700' 
-            }}
-            title="Sign out & Lock Terminal"
-          >
-            <LogOut size={15} color="#ef4444" />
-            <span>Log out</span>
+            <Receipt size={14} />
+            <span>POS Counter</span>
+            <kbd className="header-kbd">F2</kbd>
           </button>
         </div>
 
-        {/* Active Shift status */}
+        {/* Live Digital Clock */}
+        <div className="header-clock-badge" title="Live Local Store Time">
+          <Clock size={13} color="var(--accent-indigo)" />
+          <span>{timeStr || '12:00:00 PM'}</span>
+        </div>
+
+        {/* Active Cashier Shift status */}
         <button 
-          className="btn btn-secondary btn-sm"
+          type="button"
+          className="header-shift-badge"
           onClick={() => setModalState({ type: 'shift', data: activeShift })}
-          style={{ fontSize: '11px', padding: '3px 8px' }}
+          title="Click to view shift details or close register"
         >
           <span className="pulse-dot"></span>
-          Shift: {activeShift?.status === 'OPEN' ? `Active (₹${activeShift.opening_cash || 2000})` : 'Closed'}
+          <span>Shift: {activeShift?.status === 'OPEN' ? `Active (₹${activeShift.opening_cash || 2000})` : 'Closed'}</span>
         </button>
 
-        {/* Fullscreen Toggle */}
-        <button 
-          onClick={toggleFullscreen}
-          className="btn btn-secondary btn-sm"
-          title="Toggle Fullscreen"
-          style={{ padding: '5px 7px' }}
-        >
-          <Maximize size={13} />
-        </button>
+        {/* Action Button Group */}
+        <div className="header-action-group">
+          {/* Sound FX Toggle */}
+          <button 
+            type="button" 
+            className={`header-icon-btn ${soundActive ? 'active-blue' : ''}`}
+            onClick={() => {
+              const next = soundFx.toggle();
+              setSoundActive(next);
+              if (next) {
+                soundFx.barcodeScan();
+                showToast("🔊 POS Sound Effects: Active", "success");
+              } else {
+                showToast("🔇 POS Sound Effects: Muted", "info");
+              }
+            }}
+            title={soundActive ? "Mute POS Sound Effects" : "Enable POS Sound Effects"}
+          >
+            {soundActive ? <Volume2 size={16} /> : <VolumeX size={16} />}
+          </button>
+
+          {/* Refresh Data */}
+          <button 
+            type="button" 
+            className={`header-icon-btn ${refreshing ? 'spin-anim' : ''}`}
+            onClick={handleRefresh}
+            title="Sync & Refresh Database Records"
+          >
+            <RotateCw size={15} />
+          </button>
+
+          {/* Fullscreen Toggle */}
+          <button 
+            type="button"
+            onClick={toggleFullscreen}
+            className="header-icon-btn"
+            title="Toggle Kiosk Fullscreen"
+          >
+            <Maximize size={15} />
+          </button>
+
+          {/* Lock Register / Sign Out */}
+          <button 
+            type="button" 
+            className="header-icon-btn btn-danger-tint"
+            onClick={() => {
+              if (confirm("Lock terminal and sign out?")) {
+                showToast("Terminal locked.", "info");
+                setCurrentPage('dashboard');
+              }
+            }}
+            title="Lock Register / End Cashier Session"
+          >
+            <LogOut size={15} />
+          </button>
+        </div>
       </div>
     </header>
   );

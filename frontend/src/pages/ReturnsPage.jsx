@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api';
-import { RotateCcw, Search, Plus, FileText, CheckCircle, XCircle, ArrowLeftRight } from 'lucide-react';
+import { useApp } from '../context/AppContext';
+import { RotateCcw, Search, Plus, FileText, CheckCircle, XCircle, ArrowLeftRight, Printer } from 'lucide-react';
+import { printCreditNote } from '../utils/printCreditNote';
 
 export default function ReturnsPage() {
+  const { settings, showToast } = useApp();
   const [returns, setReturns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -33,7 +36,16 @@ export default function ReturnsPage() {
       const res = await api.getInvoice(invoiceNo.trim());
       if (res.success) {
         setInvoice(res.data);
-        setSelectedItems(res.data.items.map(i => ({ item_id: i.id, qty: i.qty, name: i.name, unit_price: i.unit_price, selected: false })));
+        setSelectedItems(res.data.items.map(i => ({ 
+          item_id: i.item_id || i.id, 
+          qty: i.qty, 
+          name: i.name, 
+          unit_price: i.unit_price || i.selling_price || 0, 
+          gst_rate: i.gst_rate || 12,
+          hsn_code: i.hsn_code || '',
+          barcode: i.barcode || '',
+          selected: false 
+        })));
       } else {
         alert('Invoice not found: ' + invoiceNo);
       }
@@ -50,10 +62,26 @@ export default function ReturnsPage() {
     setSubmitting(true);
     try {
       const refundAmt = items.reduce((s, i) => s + i.unit_price * i.qty, 0);
-      const res = await api.processReturn({ invoice_no: invoice.invoice_no, items, reason, refund_mode: refundMode, refund_amount: refundAmt, is_exchange: isExchange, exchange_notes: exchangeNotes });
+      const res = await api.processReturn({ 
+        invoice_no: invoice.invoice_no, 
+        items, 
+        reason, 
+        refund_mode: refundMode, 
+        refund_amount: refundAmt, 
+        is_exchange: isExchange, 
+        exchange_notes: exchangeNotes 
+      });
       if (res.success) {
-        alert('Return processed! Credit Note: ' + res.data.credit_note_no);
-        setShowModal(false); setInvoice(null); setInvoiceNo(''); loadReturns();
+        if (showToast) {
+          showToast(`Return processed! Credit Note: ${res.data.credit_note_no}`, 'success');
+        } else {
+          alert('Return processed! Credit Note: ' + res.data.credit_note_no);
+        }
+        printCreditNote(res.data, settings);
+        setShowModal(false); 
+        setInvoice(null); 
+        setInvoiceNo(''); 
+        loadReturns();
       }
     } catch(e) { alert('Error: ' + e.message); }
     finally { setSubmitting(false); }
@@ -66,7 +94,7 @@ export default function ReturnsPage() {
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'16px',flexWrap:'wrap',gap:'12px'}}>
         <div>
           <h2 style={{fontSize:'18px',fontWeight:'800'}}>Sales Returns &amp; Exchange</h2>
-          <div style={{fontSize:'12px',color:'var(--text-muted)'}}>Process customer returns, issue credit notes, and restock inventory</div>
+          <div style={{fontSize:'12px',color:'var(--text-muted)'}}>Process customer returns, issue GST credit notes, and restock inventory</div>
         </div>
         <button className="btn btn-primary" onClick={()=>setShowModal(true)}><Plus size={16}/> New Return / Exchange</button>
       </div>
@@ -74,21 +102,31 @@ export default function ReturnsPage() {
       <div className="pos-table-card">
         <div className="table-responsive">
           <table className="pos-table">
-          <thead><tr><th>Return ID</th><th>Credit Note</th><th>Original Invoice</th><th>Customer</th><th>Reason</th><th>Refund Mode</th><th>Refund Amount</th><th>Type</th><th>Date</th></tr></thead>
+          <thead><tr><th>Return ID</th><th>Credit Note</th><th>Original Invoice</th><th>Customer</th><th>Reason</th><th>Refund Mode</th><th>Refund Amount</th><th>Type</th><th>Date</th><th style={{textAlign:'center'}}>Action</th></tr></thead>
           <tbody>
-            {loading ? <tr><td colSpan={9} style={{textAlign:'center',padding:'30px',color:'var(--text-muted)'}}>Loading returns...</td></tr>
-            : returns.length === 0 ? <tr><td colSpan={9} style={{textAlign:'center',padding:'30px',color:'var(--text-muted)'}}>No returns recorded yet.</td></tr>
+            {loading ? <tr><td colSpan={10} style={{textAlign:'center',padding:'30px',color:'var(--text-muted)'}}>Loading returns...</td></tr>
+            : returns.length === 0 ? <tr><td colSpan={10} style={{textAlign:'center',padding:'30px',color:'var(--text-muted)'}}>No returns recorded yet.</td></tr>
             : returns.map(r => (
-              <tr key={r.id}>
+              <tr key={r.id || r._id}>
                 <td style={{fontFamily:'var(--font-mono)',fontWeight:'700'}}>{r.id}</td>
                 <td style={{fontFamily:'var(--font-mono)',color:'var(--accent-purple)',fontWeight:'700'}}>{r.credit_note_no}</td>
                 <td style={{fontFamily:'var(--font-mono)'}}>{r.original_invoice_no}</td>
-                <td>{r.customer ? r.customer.name : 'Walk-in'}</td>
+                <td>{r.customer_name || (r.customer ? r.customer.name : 'Walk-in')}</td>
                 <td>{r.reason}</td>
                 <td><span style={{padding:'2px 8px',borderRadius:'10px',fontSize:'11px',fontWeight:'700',background:'rgba(59,130,246,0.1)',color:'var(--accent-blue)'}}>{r.refund_mode}</span></td>
-                <td style={{fontWeight:'800',color:'var(--accent-emerald)'}}>Rs.{Number(r.refund_amount||0).toLocaleString('en-IN')}</td>
+                <td style={{fontWeight:'800',color:'var(--accent-emerald)'}}>₹{Number(r.refund_amount||0).toLocaleString('en-IN')}</td>
                 <td>{r.is_exchange ? <span style={{padding:'2px 8px',borderRadius:'10px',fontSize:'11px',background:'rgba(245,158,11,0.1)',color:'var(--accent-amber)'}}>Exchange</span> : <span style={{padding:'2px 8px',borderRadius:'10px',fontSize:'11px',background:'rgba(239,68,68,0.1)',color:'var(--accent-red)'}}>Refund</span>}</td>
-                <td style={{fontSize:'11.5px',color:'var(--text-muted)'}}>{new Date(r.created_at).toLocaleString('en-IN')}</td>
+                <td style={{fontSize:'11.5px',color:'var(--text-muted)'}}>{new Date(r.created_at || r.date).toLocaleString('en-IN')}</td>
+                <td style={{textAlign:'center'}}>
+                  <button 
+                    className="btn btn-secondary btn-sm" 
+                    title="Print Credit Note Voucher"
+                    onClick={()=>printCreditNote(r, settings)}
+                    style={{display:'inline-flex',alignItems:'center',gap:'4px',padding:'4px 8px',fontSize:'11.5px'}}
+                  >
+                    <Printer size={13}/> Print Slip
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>

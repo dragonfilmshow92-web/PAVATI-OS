@@ -4,6 +4,7 @@ import { api } from '../../api';
 import { X, Check, QrCode, Banknote, CreditCard, Split } from 'lucide-react';
 import QRCode from 'qrcode';
 import { printThermalReceipt } from '../../utils/printReceipt';
+import soundFx from '../../utils/sounds';
 
 export default function PaymentModal() {
   const { setModalState, cart, cartTotals, cartCustomer, clearCart, refreshItems, showToast, settings } = useApp();
@@ -61,11 +62,16 @@ export default function PaymentModal() {
           cost_price: item.cost_price,
           selling_price: item.selling_price,
           gst_rate: item.gst_rate,
+          hsn_code: item.hsn_code || '',
+          tax_inclusive: Boolean(item.tax_inclusive),
+          discount_percent: item.discount_percent || 0,
           subtotal: item.subtotal
         })),
         customer_id: cartCustomer?.id || 'CUST-00',
         customer_name: cartCustomer?.name || 'Walk-in Retail Customer',
         customer_phone: cartCustomer?.phone || null,
+        customer_gstin: cartCustomer?.gstin || null,
+        customer_state: cartCustomer?.state || null,
         payment_method: method.toLowerCase(),
         cash_tendered: method === 'Cash' ? Number(cashTendered) : null,
         change_returned: method === 'Cash' ? changeDue : 0,
@@ -80,6 +86,7 @@ export default function PaymentModal() {
 
       const res = await api.checkout(checkoutPayload);
       if (res.success) {
+        soundFx.billingSuccess(); // 💵 Iconic cash register "Cha-Ching!" & bell chime
         showToast(`Checkout successful! Invoice #${res.data.invoice_no}`, 'success');
         await refreshItems();
         clearCart();
@@ -134,6 +141,62 @@ export default function PaymentModal() {
         </div>
 
         <div className="modal-body">
+          {/* GST & Bill Breakdown Card */}
+          <div style={{
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-color)',
+            borderRadius: 'var(--radius-md)',
+            padding: '12px 16px',
+            marginBottom: '16px',
+            fontSize: '12.5px'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', paddingBottom: '6px', borderBottom: '1px dashed var(--border-color)' }}>
+              <div style={{ fontWeight: '700', color: 'var(--accent-blue)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span>📜 {cartCustomer?.gstin ? 'B2B TAX INVOICE' : 'B2C RETAIL INVOICE'}</span>
+                {cartCustomer?.gstin && (
+                  <span style={{ fontSize: '10px', background: 'rgba(59, 130, 246, 0.15)', padding: '1px 6px', borderRadius: '4px' }}>
+                    GSTIN: {cartCustomer.gstin}
+                  </span>
+                )}
+              </div>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                {cartTotals.isInterstate ? '🌐 Inter-State (IGST)' : '🏠 Intra-State (CGST + SGST)'}
+              </span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '8px', color: 'var(--text-secondary)' }}>
+              <div>
+                <span style={{ color: 'var(--text-muted)' }}>Taxable Value:</span>{' '}
+                <strong>₹{cartTotals.taxableAmount?.toLocaleString('en-IN') ?? '0.00'}</strong>
+              </div>
+
+              {cartTotals.isInterstate ? (
+                <div>
+                  <span style={{ color: 'var(--text-muted)' }}>IGST:</span>{' '}
+                  <strong style={{ color: 'var(--accent-blue)' }}>₹{cartTotals.igstAmount?.toFixed(2) ?? '0.00'}</strong>
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>CGST:</span>{' '}
+                    <strong style={{ color: 'var(--accent-blue)' }}>₹{cartTotals.cgstAmount?.toFixed(2) ?? '0.00'}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>SGST:</span>{' '}
+                    <strong style={{ color: 'var(--accent-blue)' }}>₹{cartTotals.sgstAmount?.toFixed(2) ?? '0.00'}</strong>
+                  </div>
+                </>
+              )}
+
+              {cartTotals.roundOff !== 0 && (
+                <div>
+                  <span style={{ color: 'var(--text-muted)' }}>Round Off:</span>{' '}
+                  <span>{cartTotals.roundOff > 0 ? `+₹${cartTotals.roundOff}` : `-₹${Math.abs(cartTotals.roundOff)}`}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Method selector tabs */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '8px', marginBottom: '20px' }}>
             <button 

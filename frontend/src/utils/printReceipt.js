@@ -1,4 +1,4 @@
-import JsBarcode from 'jsbarcode';
+﻿import JsBarcode from 'jsbarcode';
 
 /**
  * Generates a PNG data URL for a Code128 barcode
@@ -28,8 +28,8 @@ function generateBarcodeDataUrl(value) {
  * Builds clean, high-precision thermal receipt HTML for 80mm or 58mm roll printers
  */
 export function buildReceiptHtml(invoice, settings = {}, paperSize = '80mm', barcodeDataUrl = null) {
-  const storeName = settings.store_name || "TIORAS";
-  const tagline = settings.store_tagline || settings.tagline || "Fashion Studio";
+  const storeName = settings.store_name || "PAVATI OS";
+  const tagline = settings.store_tagline || settings.tagline || "Powered by PAVATI OS";
   const address = settings.store_address || settings.address || "";
   const phone = settings.store_phone || settings.phone || "";
   const gstin = settings.store_gstin || settings.gstin || "";
@@ -50,12 +50,18 @@ export function buildReceiptHtml(invoice, settings = {}, paperSize = '80mm', bar
   const totalQty = items.reduce((acc, i) => acc + (Number(i.qty) || 1), 0);
   const subtotal = Number(invoice.subtotal || invoice.grand_total || 0);
   const discountTotal = Number(invoice.discount_total || invoice.discount_amount || 0);
-  const totalTax = Number(invoice.total_tax || 0);
+  const totalTax = Number(invoice.total_tax || invoice.tax_amount || 0);
   const grandTotal = Number(invoice.grand_total || 0);
+  const taxableAmount = invoice.taxable_amount !== undefined ? Number(invoice.taxable_amount).toFixed(2) : null;
+  const roundOff = invoice.round_off !== undefined ? Number(invoice.round_off) : 0;
+  const isInterstate = Boolean(invoice.is_interstate || (Number(invoice.igst_amount) > 0));
+  const showHsn = settings.show_hsn_on_receipt !== false;
+  const showGstBreakdown = settings.show_gst_breakdown !== false;
 
-  // Tax breakdown (CGST & SGST 50-50 split for intra-state standard in Indian retail)
-  const cgst = totalTax > 0 ? (totalTax / 2).toFixed(2) : '0.00';
-  const sgst = totalTax > 0 ? (totalTax / 2).toFixed(2) : '0.00';
+  // Exact Tax breakdown from invoice or fallback split
+  const cgst = invoice.cgst_amount !== undefined ? Number(invoice.cgst_amount).toFixed(2) : (totalTax > 0 ? (totalTax / 2).toFixed(2) : '0.00');
+  const sgst = invoice.sgst_amount !== undefined ? Number(invoice.sgst_amount).toFixed(2) : (totalTax > 0 ? (totalTax / 2).toFixed(2) : '0.00');
+  const igst = invoice.igst_amount !== undefined ? Number(invoice.igst_amount).toFixed(2) : (totalTax > 0 ? totalTax.toFixed(2) : '0.00');
 
   return `<!DOCTYPE html>
 <html>
@@ -226,6 +232,12 @@ export function buildReceiptHtml(invoice, settings = {}, paperSize = '80mm', bar
         <span><strong>Cust:</strong> ${invoice.customer_name}</span>
         <span>${invoice.customer_phone || ''}</span>
       </div>
+      ${invoice.customer_gstin ? `
+        <div class="meta-grid">
+          <span><strong>GSTIN:</strong> ${invoice.customer_gstin}</span>
+          <span><strong>Type:</strong> B2B</span>
+        </div>
+      ` : ''}
     ` : ''}
 
     <div class="dashed-line"></div>
@@ -245,15 +257,15 @@ export function buildReceiptHtml(invoice, settings = {}, paperSize = '80mm', bar
           <tr>
             <td class="item-name-cell">
               <div class="bold">${item.name}</div>
-              ${item.sku || item.rack_name ? `
+              ${(item.sku || item.rack_name || (showHsn && item.hsn_code)) ? `
                 <div style="font-size: ${is58 ? '7px' : '8.5px'}; color: #222;">
-                  ${item.sku ? `SKU: ${item.sku}` : ''} ${item.rack_name ? `[${item.rack_name}]` : ''}
+                  ${(showHsn && item.hsn_code) ? `HSN:${item.hsn_code} ` : ''}${item.sku ? `SKU:${item.sku}` : ''} ${item.rack_name ? `[${item.rack_name}]` : ''}
                 </div>
               ` : ''}
             </td>
             <td class="text-center bold">${item.qty}</td>
-            <td class="text-right">₹${Number(item.selling_price || 0).toLocaleString('en-IN')}</td>
-            <td class="text-right bolder">₹${Number(item.subtotal || (item.qty * item.selling_price) || 0).toLocaleString('en-IN')}</td>
+            <td class="text-right">₹${Number(item.selling_price || item.unit_price || 0).toLocaleString('en-IN')}</td>
+            <td class="text-right bolder">₹${Number(item.subtotal || item.line_total || (item.qty * item.selling_price) || 0).toLocaleString('en-IN')}</td>
           </tr>
         `).join('')}
       </tbody>
@@ -272,14 +284,33 @@ export function buildReceiptHtml(invoice, settings = {}, paperSize = '80mm', bar
         <span>-₹${discountTotal.toLocaleString('en-IN')}</span>
       </div>
     ` : ''}
-    ${totalTax > 0 ? `
+    ${taxableAmount ? `
       <div class="totals-row" style="font-size: ${is58 ? '7.5px' : '9px'};">
-        <span>CGST (Included):</span>
-        <span>₹${cgst}</span>
+        <span>Taxable Value:</span>
+        <span>₹${Number(taxableAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
       </div>
+    ` : ''}
+    ${(totalTax > 0 && showGstBreakdown) ? (
+      isInterstate ? `
+        <div class="totals-row" style="font-size: ${is58 ? '7.5px' : '9px'};">
+          <span>IGST:</span>
+          <span>₹${igst}</span>
+        </div>
+      ` : `
+        <div class="totals-row" style="font-size: ${is58 ? '7.5px' : '9px'};">
+          <span>CGST:</span>
+          <span>₹${cgst}</span>
+        </div>
+        <div class="totals-row" style="font-size: ${is58 ? '7.5px' : '9px'};">
+          <span>SGST:</span>
+          <span>₹${sgst}</span>
+        </div>
+      `
+    ) : ''}
+    ${roundOff !== 0 ? `
       <div class="totals-row" style="font-size: ${is58 ? '7.5px' : '9px'};">
-        <span>SGST (Included):</span>
-        <span>₹${sgst}</span>
+        <span>Round Off:</span>
+        <span>${roundOff > 0 ? `+₹${roundOff.toFixed(2)}` : `-₹${Math.abs(roundOff).toFixed(2)}`}</span>
       </div>
     ` : ''}
 

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { api } from '../api';
+import soundFx from '../utils/sounds';
 import { 
   FilePlus, 
   Barcode, 
@@ -42,6 +43,7 @@ export default function ListingPage() {
     max_stock: 0,
     cost_price: 0,
     stock_qty: 0,
+    tax_inclusive: false,
     rack_location: 'Rack A-01 / Shelf 1'
   });
 
@@ -69,6 +71,7 @@ export default function ListingPage() {
       sale_category: lastItem.sale_category || prev.sale_category,
       brand: lastItem.brand || prev.brand,
       gst_rate: lastItem.gst_rate ?? prev.gst_rate,
+      tax_inclusive: lastItem.tax_inclusive ?? prev.tax_inclusive,
       selling_price: lastItem.selling_price ?? prev.selling_price,
       mrp: lastItem.mrp ?? prev.mrp,
       min_stock: lastItem.min_stock ?? prev.min_stock,
@@ -80,11 +83,11 @@ export default function ListingPage() {
   };
 
   const handleSave = async (target = 'another') => {
-    const cleanName = formData.name.trim();
-    const cleanBarcode = formData.barcode.trim();
+    const cleanName = (formData.name || '').trim();
+    const cleanBarcode = (formData.barcode || '').trim();
 
     if (!cleanName) {
-      showToast("Please enter an item name", "warning");
+      showToast("Item name is required", "warning");
       return;
     }
     if (!cleanBarcode) {
@@ -104,6 +107,7 @@ export default function ListingPage() {
         selling_price: Math.max(0, Number(formData.selling_price) || 0),
         mrp: Math.max(0, Number(formData.mrp) || Number(formData.selling_price) || 0),
         gst_rate: Number(formData.gst_rate) || 12,
+        tax_inclusive: Boolean(formData.tax_inclusive),
         min_stock: Number(formData.min_stock) || 0,
         max_stock: Number(formData.max_stock) || 0,
         stock_qty: 0, // 0 until received via Vendor Inwarding
@@ -113,6 +117,7 @@ export default function ListingPage() {
 
       const res = await api.createItem(payload);
       if (res.success || res.id) {
+        soundFx.itemListed(); // ✨ Sparkle celebration sound when item is listed
         const createdItem = res.data || { ...payload, id: res.id || payload.barcode };
         showToast(`Item "${formData.name}" listed successfully!`, "success");
         try {
@@ -145,6 +150,7 @@ export default function ListingPage() {
           brand: formData.brand,
           customBrand: formData.customBrand,
           gst_rate: formData.gst_rate,
+          tax_inclusive: formData.tax_inclusive,
           selling_price: 0,
           mrp: 0,
           min_stock: formData.min_stock,
@@ -433,6 +439,36 @@ export default function ListingPage() {
                   onChange={handleChange} 
                   placeholder="Optional MRP"
                 />
+              </div>
+            </div>
+
+            {/* Tax Inclusive Setting */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              padding: '10px 14px',
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '8px',
+              marginTop: '12px',
+              cursor: 'pointer'
+            }} onClick={() => setFormData(prev => ({ ...prev, tax_inclusive: !prev.tax_inclusive }))}>
+              <input 
+                type="checkbox"
+                id="listing_tax_inclusive"
+                name="tax_inclusive"
+                checked={Boolean(formData.tax_inclusive)}
+                onChange={handleChange}
+                style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'var(--accent-blue)' }}
+              />
+              <div>
+                <label htmlFor="listing_tax_inclusive" style={{ margin: 0, cursor: 'pointer', fontSize: '13px', fontWeight: '700' }}>
+                  Selling Price is Tax Inclusive
+                </label>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                  When checked, GST is included within the selling price.
+                </div>
               </div>
             </div>
 

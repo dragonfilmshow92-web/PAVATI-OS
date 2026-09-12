@@ -38,23 +38,121 @@ export default function CustomersPage() {
     }
   };
 
+  const totalMembers = customers.length;
+  const totalPoints = customers.reduce((acc, c) => acc + (Number(c.loyalty_points) || 0), 0);
+  const totalCredit = customers.reduce((acc, c) => acc + (Number(c.credit_balance) || 0), 0);
+  const totalSpent = customers.reduce((acc, c) => acc + (Number(c.total_spent) || 0), 0);
+
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      {/* Customer KPIs */}
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', 
+        gap: '12px' 
+      }}>
+        <div style={{ 
+          background: 'var(--bg-surface)', 
+          border: '1px solid var(--border-color)', 
+          borderRadius: '12px', 
+          padding: '14px 18px',
+          boxShadow: 'var(--shadow-sm)'
+        }}>
+          <div style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.6px' }}>
+            Registered Members
+          </div>
+          <div style={{ fontSize: '24px', fontWeight: '800', fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', marginTop: '4px' }}>
+            {totalMembers}
+          </div>
+          <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+            Active club profiles
+          </div>
+        </div>
+
+        <div style={{ 
+          background: 'var(--bg-surface)', 
+          border: '1px solid var(--border-color)', 
+          borderRadius: '12px', 
+          padding: '14px 18px',
+          boxShadow: 'var(--shadow-sm)'
+        }}>
+          <div style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.6px' }}>
+            Loyalty Points Pool
+          </div>
+          <div style={{ fontSize: '24px', fontWeight: '800', fontFamily: 'var(--font-mono)', color: 'var(--accent-purple)', marginTop: '4px' }}>
+            ⭐ {totalPoints.toLocaleString('en-IN')}
+          </div>
+          <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+            Issued rewards points
+          </div>
+        </div>
+
+        <div style={{ 
+          background: 'var(--bg-surface)', 
+          border: '1px solid var(--border-color)', 
+          borderRadius: '12px', 
+          padding: '14px 18px',
+          boxShadow: 'var(--shadow-sm)'
+        }}>
+          <div style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.6px' }}>
+            Total Khata Credit
+          </div>
+          <div style={{ fontSize: '24px', fontWeight: '800', fontFamily: 'var(--font-mono)', color: totalCredit > 0 ? 'var(--accent-red)' : 'var(--accent-emerald)', marginTop: '4px' }}>
+            ₹{totalCredit.toLocaleString('en-IN')}
+          </div>
+          <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+            Outstanding ledger balance
+          </div>
+        </div>
+
+        <div style={{ 
+          background: 'var(--bg-surface)', 
+          border: '1px solid var(--border-color)', 
+          borderRadius: '12px', 
+          padding: '14px 18px',
+          boxShadow: 'var(--shadow-sm)'
+        }}>
+          <div style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.6px' }}>
+            Lifetime Sales
+          </div>
+          <div style={{ fontSize: '24px', fontWeight: '800', fontFamily: 'var(--font-mono)', color: 'var(--accent-emerald)', marginTop: '4px' }}>
+            ₹{Math.round(totalSpent).toLocaleString('en-IN')}
+          </div>
+          <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+            Total member contribution
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h2 style={{ fontSize: '18px', fontWeight: '800' }}>Customer Club & Khata Ledger</h2>
-          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: '800', margin: 0 }}>Customer Club & Khata Ledger</h2>
+          <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
             Manage store loyalty points, customer phone records, and credit ledger
           </div>
         </div>
 
-        <button className="btn btn-primary" onClick={() => setShowAdd(!showAdd)}>
-          <Plus size={16} /> Register New Customer
-        </button>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ position: 'relative', width: '240px' }}>
+            <Search size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-muted)' }} />
+            <input 
+              type="text" 
+              className="form-control" 
+              style={{ paddingLeft: '38px', fontSize: '13px' }}
+              placeholder="Search Name or Mobile..." 
+              value={search} 
+              onChange={e => setSearch(e.target.value)} 
+            />
+          </div>
+
+          <button className="btn btn-primary" onClick={() => setShowAdd(!showAdd)}>
+            <Plus size={16} /> Register New Customer
+          </button>
+        </div>
       </div>
 
       {showAdd && (
-        <div style={{ padding: '16px', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', marginBottom: '16px' }}>
+        <div style={{ padding: '16px', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)' }}>
           <form onSubmit={handleCreateCustomer} style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
             <div className="form-group" style={{ marginBottom: 0, flex: 1, minWidth: 'min(100%, 200px)' }}>
               <label>Customer Full Name</label>
