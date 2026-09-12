@@ -1,4 +1,4 @@
-﻿import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { api } from '../api';
 import soundFx from '../utils/sounds';
 
@@ -162,23 +162,39 @@ export function AppProvider({ children }) {
   }, []);
 
   const refreshItems = async () => {
-    const res = await api.getItems();
-    if (res.success) setItems(res.data);
+    try {
+      const res = await api.getItems();
+      if (res && res.success && Array.isArray(res.data)) setItems(res.data);
+    } catch (e) {
+      console.warn('refreshItems failed:', e);
+    }
   };
 
   const refreshSuppliers = async () => {
-    const res = await api.getSuppliers();
-    if (res.success) setSuppliers(res.data);
+    try {
+      const res = await api.getSuppliers();
+      if (res && res.success && Array.isArray(res.data)) setSuppliers(res.data);
+    } catch (e) {
+      console.warn('refreshSuppliers failed:', e);
+    }
   };
 
   const refreshGRN = async () => {
-    const res = await api.getGRNRecords();
-    if (res.success) setGrnRecords(res.data);
+    try {
+      const res = await api.getGRNRecords();
+      if (res && res.success && Array.isArray(res.data)) setGrnRecords(res.data);
+    } catch (e) {
+      console.warn('refreshGRN failed:', e);
+    }
   };
 
   const refreshShift = async () => {
-    const res = await api.getActiveShift();
-    if (res.success) setActiveShift(res.data);
+    try {
+      const res = await api.getActiveShift();
+      if (res && res.success && res.data) setActiveShift(res.data);
+    } catch (e) {
+      console.warn('refreshShift failed:', e);
+    }
   };
 
   // Cart operations

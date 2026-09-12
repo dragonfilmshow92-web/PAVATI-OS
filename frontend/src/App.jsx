@@ -3,6 +3,7 @@ import { AppProvider, useApp } from './context/AppContext';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import AmbientBackdrop from './components/AmbientBackdrop';
+import ErrorBoundary from './components/ErrorBoundary';
 
 import ProductModal from './components/Modals/ProductModal';
 import PriceEditModal from './components/Modals/PriceEditModal';
@@ -148,8 +149,10 @@ function AppLayout() {
 
 export default function App() {
   return (
-    <AppProvider>
-      <AppLayout />
-    </AppProvider>
+    <ErrorBoundary>
+      <AppProvider>
+        <AppLayout />
+      </AppProvider>
+    </ErrorBoundary>
   );
 }

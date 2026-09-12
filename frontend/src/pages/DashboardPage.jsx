@@ -29,7 +29,7 @@ import {
 import './DashboardPage.css';
 
 export default function DashboardPage() {
-  const { items, grnRecords, refreshGRN, refreshItems, setCurrentPage, setModalState } = useApp();
+  const { items, grnRecords, refreshGRN, refreshItems, setCurrentPage, setModalState, settings } = useApp();
 
   const [dashboardStats, setDashboardStats] = useState(null);
   const [activeTab, setActiveTab] = useState('invoices'); // 'invoices' | 'reorder'

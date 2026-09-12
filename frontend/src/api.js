@@ -12,10 +12,19 @@ function getHeaders() {
 async function apiFetch(url) {
   try {
     const res = await fetch(url, { headers: getHeaders() });
+    if (!res.ok) {
+      console.warn(`API GET ${res.status} on ${url}`);
+      return { success: false, data: null, error: `HTTP ${res.status}` };
+    }
+    const contentType = res.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      console.warn(`API GET non-JSON response on ${url}`);
+      return { success: false, data: null, error: 'Non-JSON response' };
+    }
     return await res.json();
   } catch (err) {
-    console.error('API GET error on ' + url + ':', err);
-    throw err;
+    console.warn('API GET error on ' + url + ':', err.message);
+    return { success: false, data: null, error: err.message };
   }
 }
 
@@ -27,10 +36,19 @@ async function apiPost(url, method = 'POST', data) {
       headers: getHeaders(),
       body: data !== undefined ? JSON.stringify(data) : undefined
     });
+    if (!res.ok) {
+      console.warn(`API ${method} ${res.status} on ${url}`);
+      return { success: false, data: null, error: `HTTP ${res.status}` };
+    }
+    const contentType = res.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      console.warn(`API ${method} non-JSON response on ${url}`);
+      return { success: false, data: null, error: 'Non-JSON response' };
+    }
     return await res.json();
   } catch (err) {
-    console.error(`API ${method} error on ${url}:`, err);
-    throw err;
+    console.warn(`API ${method} error on ${url}:`, err.message);
+    return { success: false, data: null, error: err.message };
   }
 }
 
