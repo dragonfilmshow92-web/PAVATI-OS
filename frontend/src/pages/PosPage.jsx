@@ -31,22 +31,27 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Receipt,
-  GripVertical
+  GripVertical,
+  Sun,
+  Moon
 } from 'lucide-react';
 import CameraBarcodeScannerModal from '../components/Modals/CameraBarcodeScannerModal';
 
 export default function PosPage() {
   const { 
     items, 
-    categories,
+    categories, 
     cart, 
+    setCart,
     addToCart, 
-    updateCartQty, 
-    updateCartLineDiscount,
+    updateCartItemQty, 
+    updateCartItemDiscount,
     removeFromCart, 
-    cartTotals, 
-    appliedCoupon,
-    applyCoupon,
+    clearCart,
+    cartTotals,
+    appliedCoupon, 
+    cartDiscountPercent, 
+    applyCoupon, 
     removeCoupon, 
     cartCustomer, 
     setCartCustomer, 
@@ -58,7 +63,9 @@ export default function PosPage() {
     setCurrentPage,
     settings,
     sidebarOpen,
-    toggleSidebar
+    toggleSidebar,
+    theme,
+    toggleTheme
   } = useApp();
 
   const [barcodeInput, setBarcodeInput] = useState('');
@@ -260,6 +267,16 @@ export default function PosPage() {
           >
             {sidebarOpen ? <PanelLeftClose size={18} /> : <PanelLeftOpen size={18} />}
             <span className="sidebar-toggle-text">{sidebarOpen ? "Full POS" : "Menu"}</span>
+          </button>
+
+          <button 
+            type="button"
+            onClick={toggleTheme}
+            className="posbranch-sidebar-toggle-btn"
+            title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
+          >
+            {theme === 'dark' ? <Sun size={17} color="#fbbf24" /> : <Moon size={17} color="#4f46e5" />}
+            <span className="sidebar-toggle-text">{theme === 'dark' ? "Light" : "Dark"}</span>
           </button>
 
           {/* Brand identity */}
@@ -709,7 +726,9 @@ export default function PosPage() {
               type="button"
               className={`cat-pill ${selectedCategory === 'ALL' ? 'cat-pill-active' : ''}`}
               style={selectedCategory === 'ALL' ? 
-                { background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', color: '#ffffff', borderColor: 'transparent', boxShadow: '0 4px 14px rgba(99, 102, 241, 0.45)' } :
+                { background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)', color: '#ffffff', borderColor: 'transparent', boxShadow: '0 4px 14px rgba(79, 70, 229, 0.4)' } :
+                theme === 'light' ?
+                { background: 'rgba(79, 70, 229, 0.08)', color: '#4f46e5', border: '1px solid rgba(79, 70, 229, 0.22)' } :
                 { background: 'rgba(99, 102, 241, 0.12)', color: '#a5b4fc', border: '1px solid rgba(99, 102, 241, 0.28)' }
               }
               onClick={() => setSelectedCategory('ALL')}
@@ -720,20 +739,21 @@ export default function PosPage() {
               const count = (items || []).filter(i => String(i.category || '').toLowerCase() === catName.toLowerCase()).length;
               const isActive = selectedCategory.toLowerCase() === catName.toLowerCase();
               const c = catName.toLowerCase();
+              const isLt = theme === 'light';
               
               let styleObj;
               if (isActive) {
-                if (c.includes('shirt')) styleObj = { background: 'linear-gradient(135deg, #0284c7 0%, #06b6d4 100%)', color: '#ffffff', borderColor: 'transparent', boxShadow: '0 4px 14px rgba(6, 182, 212, 0.45)' };
-                else if (c.includes('trouser') || c.includes('pant') || c.includes('jean')) styleObj = { background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)', color: '#ffffff', borderColor: 'transparent', boxShadow: '0 4px 14px rgba(16, 185, 129, 0.45)' };
-                else if (c.includes('kurti') || c.includes('dress') || c.includes('ethnic') || c.includes('saree')) styleObj = { background: 'linear-gradient(135deg, #db2777 0%, #f43f5e 100%)', color: '#ffffff', borderColor: 'transparent', boxShadow: '0 4px 14px rgba(244, 63, 94, 0.45)' };
-                else if (c.includes('suit') || c.includes('blazer')) styleObj = { background: 'linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)', color: '#ffffff', borderColor: 'transparent', boxShadow: '0 4px 14px rgba(79, 70, 229, 0.45)' };
-                else styleObj = { background: 'linear-gradient(135deg, #d97706 0%, #f59e0b 100%)', color: '#ffffff', borderColor: 'transparent', boxShadow: '0 4px 14px rgba(245, 158, 11, 0.45)' };
+                if (c.includes('shirt')) styleObj = { background: 'linear-gradient(135deg, #0284c7 0%, #06b6d4 100%)', color: '#ffffff', borderColor: 'transparent', boxShadow: '0 4px 14px rgba(6, 182, 212, 0.45)', fontWeight: 800 };
+                else if (c.includes('trouser') || c.includes('pant') || c.includes('jean')) styleObj = { background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)', color: '#ffffff', borderColor: 'transparent', boxShadow: '0 4px 14px rgba(16, 185, 129, 0.45)', fontWeight: 800 };
+                else if (c.includes('kurti') || c.includes('dress') || c.includes('ethnic') || c.includes('saree')) styleObj = { background: 'linear-gradient(135deg, #db2777 0%, #f43f5e 100%)', color: '#ffffff', borderColor: 'transparent', boxShadow: '0 4px 14px rgba(244, 63, 94, 0.45)', fontWeight: 800 };
+                else if (c.includes('suit') || c.includes('blazer')) styleObj = { background: 'linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)', color: '#ffffff', borderColor: 'transparent', boxShadow: '0 4px 14px rgba(79, 70, 229, 0.45)', fontWeight: 800 };
+                else styleObj = { background: 'linear-gradient(135deg, #d97706 0%, #f59e0b 100%)', color: '#ffffff', borderColor: 'transparent', boxShadow: '0 4px 14px rgba(245, 158, 11, 0.45)', fontWeight: 800 };
               } else {
-                if (c.includes('shirt')) styleObj = { background: 'rgba(6, 182, 212, 0.12)', color: '#38bdf8', border: '1px solid rgba(6, 182, 212, 0.28)' };
-                else if (c.includes('trouser') || c.includes('pant') || c.includes('jean')) styleObj = { background: 'rgba(16, 185, 129, 0.12)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.28)' };
-                else if (c.includes('kurti') || c.includes('dress') || c.includes('ethnic') || c.includes('saree')) styleObj = { background: 'rgba(244, 63, 94, 0.12)', color: '#fb7185', border: '1px solid rgba(244, 63, 94, 0.28)' };
-                else if (c.includes('suit') || c.includes('blazer')) styleObj = { background: 'rgba(139, 92, 246, 0.12)', color: '#c4b5fd', border: '1px solid rgba(139, 92, 246, 0.28)' };
-                else styleObj = { background: 'rgba(245, 158, 11, 0.12)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.28)' };
+                if (c.includes('shirt')) styleObj = isLt ? { background: 'rgba(2, 132, 199, 0.08)', color: '#0284c7', border: '1.5px solid rgba(2, 132, 199, 0.3)', fontWeight: 700 } : { background: 'rgba(6, 182, 212, 0.12)', color: '#38bdf8', border: '1px solid rgba(6, 182, 212, 0.28)' };
+                else if (c.includes('trouser') || c.includes('pant') || c.includes('jean')) styleObj = isLt ? { background: 'rgba(5, 150, 105, 0.08)', color: '#059669', border: '1.5px solid rgba(5, 150, 105, 0.3)', fontWeight: 700 } : { background: 'rgba(16, 185, 129, 0.12)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.28)' };
+                else if (c.includes('kurti') || c.includes('dress') || c.includes('ethnic') || c.includes('saree')) styleObj = isLt ? { background: 'rgba(225, 29, 72, 0.08)', color: '#e11d48', border: '1.5px solid rgba(225, 29, 72, 0.3)', fontWeight: 700 } : { background: 'rgba(244, 63, 94, 0.12)', color: '#fb7185', border: '1px solid rgba(244, 63, 94, 0.28)' };
+                else if (c.includes('suit') || c.includes('blazer')) styleObj = isLt ? { background: 'rgba(124, 58, 237, 0.08)', color: '#7c3aed', border: '1.5px solid rgba(124, 58, 237, 0.3)', fontWeight: 700 } : { background: 'rgba(139, 92, 246, 0.12)', color: '#c4b5fd', border: '1px solid rgba(139, 92, 246, 0.28)' };
+                else styleObj = isLt ? { background: 'rgba(217, 119, 6, 0.08)', color: '#d97706', border: '1.5px solid rgba(217, 119, 6, 0.3)', fontWeight: 700 } : { background: 'rgba(245, 158, 11, 0.12)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.28)' };
               }
 
               return (

@@ -15,13 +15,15 @@ import {
   VolumeX,
   Receipt,
   Sparkles,
-  ShieldCheck
+  ShieldCheck,
+  Sun,
+  Moon
 } from 'lucide-react';
 import soundFx from '../utils/sounds';
 import PWAInstallButton from './PWAInstallButton';
 
 export default function Header() {
-  const { currentPage, setCurrentPage, settings, activeShift, setModalState, toggleSidebar, sidebarOpen, showToast } = useApp();
+  const { currentPage, setCurrentPage, settings, activeShift, setModalState, toggleSidebar, sidebarOpen, showToast, theme, toggleTheme } = useApp();
   const [timeStr, setTimeStr] = useState('');
   const [soundActive, setSoundActive] = useState(() => soundFx.isEnabled());
   const [refreshing, setRefreshing] = useState(false);
@@ -169,6 +171,16 @@ export default function Header() {
             title="Sync & Refresh Database Records"
           >
             <RotateCw size={15} />
+          </button>
+
+          {/* Theme Toggle (Light / Dark Mode) */}
+          <button 
+            type="button"
+            onClick={toggleTheme}
+            className="header-icon-btn"
+            title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Theme`}
+          >
+            {theme === 'dark' ? <Sun size={15} color="#f59e0b" /> : <Moon size={15} color="#4f46e5" />}
           </button>
 
           {/* Fullscreen Toggle */}

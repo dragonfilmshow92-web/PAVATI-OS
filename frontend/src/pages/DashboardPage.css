@@ -1,4 +1,4 @@
-﻿/* ==========================================================================
+/* ==========================================================================
    ENTERPRISE PAVATI OS — EXECUTIVE DASHBOARD STYLES
    PAVATI OS & Retail Operating Platform
    ========================================================================== */
@@ -200,6 +200,16 @@
   background: linear-gradient(135deg, rgba(26, 36, 58, 0.7) 0%, rgba(20, 28, 46, 0.9) 100%);
 }
 
+[data-theme="light"] .kpi-glass-card {
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+[data-theme="light"] .kpi-glass-card:hover {
+  background: #ffffff;
+  box-shadow: 0 10px 24px -4px rgba(15, 23, 42, 0.08);
+}
+
 .kpi-glass-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 12px 24px -6px rgba(0, 0, 0, 0.25);
@@ -321,6 +331,16 @@
 
 [data-theme="dark"] .dock-action-card {
   background: linear-gradient(135deg, rgba(20, 28, 46, 0.8) 0%, rgba(26, 36, 58, 0.6) 100%);
+}
+
+[data-theme="light"] .dock-action-card {
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+[data-theme="light"] .dock-action-card:hover {
+  background: #f8fafc;
+  box-shadow: 0 8px 20px -4px rgba(15, 23, 42, 0.08);
 }
 
 .dock-action-card:hover {
@@ -636,3 +656,93 @@
   font-weight: 700;
   color: var(--text-primary);
 }
+
+/* ==========================================================================
+   DASHBOARD LIGHT MODE LUXURY ENHANCEMENTS
+   ========================================================================== */
+[data-theme="light"] .dashboard-hero-banner {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
+  border: 1.5px solid #e2e8f0 !important;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05) !important;
+}
+[data-theme="light"] .dashboard-hero-title {
+  color: #0f172a !important;
+  font-weight: 900 !important;
+}
+[data-theme="light"] .dashboard-hero-sub {
+  color: #475569 !important;
+}
+[data-theme="light"] .dashboard-hero-sub span {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
+[data-theme="light"] .kpi-glass-card {
+  background: #ffffff !important;
+  border: 1.5px solid #e2e8f0 !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04) !important;
+}
+[data-theme="light"] .kpi-glass-card:hover {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 10px 24px -4px rgba(15, 23, 42, 0.08) !important;
+}
+[data-theme="light"] .kpi-label {
+  color: #475569 !important;
+  font-weight: 800 !important;
+}
+[data-theme="light"] .kpi-value {
+  color: #0f172a !important;
+  font-weight: 950 !important;
+}
+[data-theme="light"] .kpi-sub-label {
+  color: #64748b !important;
+  font-weight: 700 !important;
+}
+[data-theme="light"] .dock-action-card {
+  background: #ffffff !important;
+  border: 1.5px solid #e2e8f0 !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04) !important;
+}
+[data-theme="light"] .dock-action-card:hover {
+  background: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 8px 20px -4px rgba(15, 23, 42, 0.08) !important;
+}
+[data-theme="light"] .dock-title {
+  color: #0f172a !important;
+  font-weight: 800 !important;
+}
+[data-theme="light"] .dock-subtitle {
+  color: #475569 !important;
+  font-weight: 600 !important;
+}
+[data-theme="light"] .dock-keycap {
+  background: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #1e293b !important;
+  font-weight: 800 !important;
+}
+[data-theme="light"] .analytics-card {
+  background: #ffffff !important;
+  border: 1.5px solid #e2e8f0 !important;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04) !important;
+}
+[data-theme="light"] .analytics-title {
+  color: #0f172a !important;
+  font-weight: 800 !important;
+}
+[data-theme="light"] .analytics-subtitle {
+  color: #64748b !important;
+  font-weight: 600 !important;
+}
+[data-theme="light"] .dashboard-system-footer {
+  background: #ffffff !important;
+  border: 1.5px solid #e2e8f0 !important;
+  color: #475569 !important;
+}
+[data-theme="light"] .shortcut-pill-badge {
+  background: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+}
+

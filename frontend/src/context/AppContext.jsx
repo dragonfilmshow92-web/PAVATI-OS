@@ -24,14 +24,19 @@ export function AppProvider({ children }) {
 
   const [theme, setTheme] = useState(() => {
     try {
-      if (!localStorage.getItem('pos_theme_v10_dark_enforce')) {
-        localStorage.setItem('pos_theme', 'dark');
-        localStorage.setItem('pos_theme_v10_dark_enforce', 'true');
-        return 'dark';
+      if (typeof window !== 'undefined') {
+        const urlParams = new URLSearchParams(window.location.search);
+        const qTheme = urlParams.get('theme');
+        if (qTheme === 'light' || qTheme === 'dark') {
+          localStorage.setItem('pos_theme', qTheme);
+          return qTheme;
+        }
+        const saved = localStorage.getItem('pos_theme');
+        if (saved === 'light' || saved === 'dark') return saved;
       }
-      return localStorage.getItem('pos_theme') || 'dark';
+      return 'light';
     } catch (e) {
-      return 'dark';
+      return 'light';
     }
   });
   const [currentPage, setCurrentPageRaw] = useState(getInitialPage);
@@ -124,7 +129,10 @@ export function AppProvider({ children }) {
   const toggleTheme = () => {
     const next = theme === 'dark' ? 'light' : 'dark';
     setTheme(next);
-    localStorage.setItem('pos_theme', next);
+    try {
+      localStorage.setItem('pos_theme', next);
+      document.documentElement.setAttribute('data-theme', next);
+    } catch (e) {}
   };
 
   const loadAllData = async () => {

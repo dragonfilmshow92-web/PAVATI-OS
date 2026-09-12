@@ -1,7 +1,18 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      try {
+        var urlParams = new URLSearchParams(window.location.search);
+        var qTheme = urlParams.get('theme');
+        if (qTheme === 'light' || qTheme === 'dark') {
+          localStorage.setItem('pos_theme', qTheme);
+        }
+        var savedTheme = localStorage.getItem('pos_theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+      } catch (e) {}
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="alternate icon" type="image/x-icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" href="/app-icon.png" />
@@ -33,23 +44,19 @@
         window.dispatchEvent(new CustomEvent('pwa-install-ready'));
       });
 
-      // Guarantee initial load switches to Midnight Obsidian theme
+      // Maintain dynamic theme attribute
       try {
-        if (!localStorage.getItem('pos_theme_v10_dark_enforce')) {
-          localStorage.setItem('pos_theme', 'dark');
-          localStorage.setItem('pos_theme_v10_dark_enforce', 'true');
-        }
-        var currentTheme = localStorage.getItem('pos_theme') || 'dark';
+        var currentTheme = localStorage.getItem('pos_theme') || 'light';
         document.documentElement.setAttribute('data-theme', currentTheme);
       } catch (e) {
-        document.documentElement.setAttribute('data-theme', 'dark');
+        document.documentElement.setAttribute('data-theme', 'light');
       }
     </script>
-    <script type="module" crossorigin src="/assets/index-p5w-yjDr.js"></script>
+    <script type="module" crossorigin src="/assets/index-BzElp2jp.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/rolldown-runtime-CbXtAM7H.js">
     <link rel="modulepreload" crossorigin href="/assets/vendor-VgQQsRHr.js">
     <link rel="modulepreload" crossorigin href="/assets/vendor-react-CJcr8Sf0.js">
-    <link rel="stylesheet" crossorigin href="/assets/index-CS5W0YZX.css">
+    <link rel="stylesheet" crossorigin href="/assets/index-CM1ZmQaQ.css">
   </head>
   <body>
     <div id="root"></div>
