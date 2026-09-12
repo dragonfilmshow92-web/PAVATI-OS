@@ -2829,14 +2829,38 @@ body {
 .posbranch-main-area {
   display: flex;
   flex: 1;
-  gap: 14px;
+  gap: 12px;
   overflow: hidden;
   min-height: 0;
+  position: relative;
+}
+
+/* ── Sidebar Toggle in POS Header ── */
+.posbranch-sidebar-toggle-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  border-radius: 10px;
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 11.5px;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+.posbranch-sidebar-toggle-btn:hover {
+  background: rgba(99, 102, 241, 0.18);
+  border-color: var(--accent-indigo);
+  color: #ffffff;
+}
+.sidebar-toggle-text {
+  font-size: 11px;
 }
 
 /* ── Left Cart / Current Bill Pane ── */
 .posbranch-cart-pane {
-  flex: 1.55;
   background: var(--bg-glass-card);
   border: 1px solid var(--border-color);
   border-radius: 14px;
@@ -2848,6 +2872,7 @@ body {
   -webkit-backdrop-filter: blur(20px);
   min-height: 0;
   position: relative;
+  transition: width 0.06s ease;
 }
 
 .posbranch-cart-pane::before {
@@ -2861,9 +2886,123 @@ body {
   z-index: 15;
 }
 
+/* Cart Pane Header & Section Sizer Presets */
+.cart-pane-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: rgba(9, 14, 28, 0.94);
+  border-bottom: 1px solid var(--border-color);
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cart-pane-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cart-pane-heading {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: 0.3px;
+}
+
+.cart-count-badge {
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 1.5px 7px;
+  border-radius: 10px;
+  background: rgba(99, 102, 241, 0.12);
+  color: var(--accent-indigo);
+  font-family: var(--font-mono);
+}
+
+.section-sizer-pills {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 2px 4px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.sizer-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  padding: 0 4px;
+}
+
+.sizer-btn {
+  background: transparent;
+  border: none;
+  border-radius: 5px;
+  padding: 2px 7px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: var(--font-mono);
+}
+.sizer-btn:hover {
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--text-primary);
+}
+.sizer-btn.active {
+  background: var(--accent-indigo);
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.4);
+}
+
+/* Interactive Splitter Resizer Handle */
+.posbranch-resizer-handle {
+  width: 14px;
+  margin: 0 -4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: col-resize;
+  position: relative;
+  z-index: 25;
+  user-select: none;
+  touch-action: none;
+}
+
+.resizer-knob {
+  width: 14px;
+  height: 48px;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-indigo);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  transition: all 0.15s ease;
+}
+
+.posbranch-resizer-handle:hover .resizer-knob,
+.posbranch-resizer-handle.is-dragging .resizer-knob {
+  background: var(--accent-indigo);
+  color: #ffffff;
+  border-color: #818cf8;
+  box-shadow: 0 0 14px rgba(99, 102, 241, 0.6);
+  transform: scale(1.1);
+}
+
 .posbranch-table-container {
   flex: 1;
   overflow-y: auto;
+  overflow-x: auto;
+  scrollbar-width: thin;
 }
 
 .posbranch-table {
@@ -2886,13 +3025,14 @@ body {
 }
 
 .posbranch-table th {
-  padding: 11px 14px;
+  padding: 9px 8px;
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.5px;
   color: #94a3b8;
   text-transform: uppercase;
   background: transparent;
+  white-space: nowrap;
 }
 
 .cart-table-row {
@@ -4630,30 +4770,7 @@ body {
   background: rgba(16, 185, 129, 0.2);
 }
 
-/* ── Main 3-Col Layout ── */
-.posbranch-main-area {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  overflow: hidden;
-}
-
-/* ────────────────────────────────
-   CART PANE (Right Panel ~360px)
-   ──────────────────────────────── */
-.posbranch-cart-pane {
-  width: 360px;
-  min-width: 300px;
-  max-width: 400px;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  border-left: 1px solid var(--border-subtle);
-  background: var(--bg-glass-card);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  overflow: hidden;
-}
+/* ── Legacy cart pane overrides removed for full dynamic width resizing ── */
 
 .cart-header {
   flex-shrink: 0;

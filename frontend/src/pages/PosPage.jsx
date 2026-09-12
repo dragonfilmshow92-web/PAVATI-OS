@@ -27,7 +27,11 @@ import {
   X,
   CreditCard,
   Percent,
-  Camera
+  Camera,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Receipt,
+  GripVertical
 } from 'lucide-react';
 import CameraBarcodeScannerModal from '../components/Modals/CameraBarcodeScannerModal';
 
@@ -52,7 +56,9 @@ export default function PosPage() {
     setModalState, 
     showToast,
     setCurrentPage,
-    settings
+    settings,
+    sidebarOpen,
+    toggleSidebar
   } = useApp();
 
   const [barcodeInput, setBarcodeInput] = useState('');
@@ -67,6 +73,58 @@ export default function PosPage() {
   const [cameraScannerOpen, setCameraScannerOpen] = useState(false);
 
   const barcodeInputRef = useRef(null);
+  const mainAreaRef = useRef(null);
+
+  // Section split width state (% allocated to Cart pane, 65% optimal default)
+  const [cartWidthPercent, setCartWidthPercent] = useState(() => {
+    try {
+      const saved = localStorage.getItem('pos_cart_width_pct');
+      return saved ? Math.min(Math.max(parseFloat(saved), 35), 100) : 65;
+    } catch {
+      return 65;
+    }
+  });
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleMouseDownResizer = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleMouseMove = (e) => {
+      if (!mainAreaRef.current) return;
+      const rect = mainAreaRef.current.getBoundingClientRect();
+      const relativeX = e.clientX - rect.left;
+      let newPct = (relativeX / rect.width) * 100;
+      if (newPct < 35) newPct = 35;
+      if (newPct > 92) newPct = 100;
+      setCartWidthPercent(Math.round(newPct));
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      try {
+        localStorage.setItem('pos_cart_width_pct', String(cartWidthPercent));
+      } catch {}
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, cartWidthPercent]);
+
+  const setSplitPreset = (pct) => {
+    setCartWidthPercent(pct);
+    try {
+      localStorage.setItem('pos_cart_width_pct', String(pct));
+    } catch {}
+  };
 
   // Load active coupons for quick selection chips
   useEffect(() => {
@@ -193,14 +251,26 @@ export default function PosPage() {
     <div className="posbranch-wrapper">
       {/* ─── TOP HEADER / COMMAND BAR ─── */}
       <header className="posbranch-header">
-        {/* Brand identity */}
-        <div className="posbranch-brand" onClick={() => setCurrentPage('dashboard')} title="Click to open Dashboard">
-          <div className="posbranch-brand-icon">
-            <Store size={20} color="#ffffff" />
-          </div>
-          <div>
-            <div className="posbranch-brand-title">{settings?.store_name || "PAVATI OS"}</div>
-            <div className="posbranch-brand-sub">POINT OF SALE · TERMINAL #01</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button 
+            type="button"
+            onClick={toggleSidebar}
+            className="posbranch-sidebar-toggle-btn"
+            title={sidebarOpen ? "Collapse Navigation for Full-Screen POS (Ctrl+B)" : "Expand Navigation (Ctrl+B)"}
+          >
+            {sidebarOpen ? <PanelLeftClose size={18} /> : <PanelLeftOpen size={18} />}
+            <span className="sidebar-toggle-text">{sidebarOpen ? "Full POS" : "Menu"}</span>
+          </button>
+
+          {/* Brand identity */}
+          <div className="posbranch-brand" onClick={() => setCurrentPage('dashboard')} title="Click to open Dashboard">
+            <div className="posbranch-brand-icon">
+              <Store size={20} color="#ffffff" />
+            </div>
+            <div>
+              <div className="posbranch-brand-title">{settings?.store_name || "PAVATI OS"}</div>
+              <div className="posbranch-brand-sub">POINT OF SALE · TERMINAL #01</div>
+            </div>
           </div>
         </div>
 
@@ -316,21 +386,72 @@ export default function PosPage() {
       </header>
 
       {/* ─── MAIN VIEWPORT: 2 COLUMNS (CART BILLING & PRODUCT SHOWCASE) ─── */}
-      <div className="posbranch-main-area">
+      <div className="posbranch-main-area" ref={mainAreaRef}>
         {/* Left Pane: Current Bill / Cart Table */}
-        <div className="posbranch-cart-pane">
+        <div 
+          className="posbranch-cart-pane"
+          style={{
+            flex: 'none',
+            width: cartWidthPercent >= 100 ? '100%' : `calc(${cartWidthPercent}% - 6px)`
+          }}
+        >
+          {/* Cart Header with Section Sizer Presets */}
+          <div className="cart-pane-header">
+            <div className="cart-pane-title-group">
+              <Receipt size={16} color="var(--accent-indigo)" />
+              <span className="cart-pane-heading">Current Sale Bill</span>
+              <span className="cart-count-badge">{cart.length} line{cart.length !== 1 ? 's' : ''}</span>
+            </div>
+
+            <div className="section-sizer-pills">
+              <span className="sizer-label">Split:</span>
+              <button 
+                type="button" 
+                className={`sizer-btn ${cartWidthPercent === 50 ? 'active' : ''}`}
+                onClick={() => setSplitPreset(50)}
+                title="Equal 50:50 Split"
+              >
+                50:50
+              </button>
+              <button 
+                type="button" 
+                className={`sizer-btn ${cartWidthPercent === 65 ? 'active' : ''}`}
+                onClick={() => setSplitPreset(65)}
+                title="Balanced 65:35 Split (Recommended)"
+              >
+                65:35
+              </button>
+              <button 
+                type="button" 
+                className={`sizer-btn ${cartWidthPercent === 75 ? 'active' : ''}`}
+                onClick={() => setSplitPreset(75)}
+                title="Wide 75:25 Split"
+              >
+                75:25
+              </button>
+              <button 
+                type="button" 
+                className={`sizer-btn ${cartWidthPercent >= 100 ? 'active' : ''}`}
+                onClick={() => setSplitPreset(cartWidthPercent >= 100 ? 65 : 100)}
+                title={cartWidthPercent >= 100 ? "Restore Catalog" : "Full-Width Cart (100%)"}
+              >
+                {cartWidthPercent >= 100 ? "Show Catalog" : "100% Cart"}
+              </button>
+            </div>
+          </div>
+
           <div className="posbranch-table-container">
             <table className="posbranch-table">
               <thead>
                 <tr>
-                  <th style={{ width: '38px', textAlign: 'center' }}>#</th>
-                  <th>PRODUCT DESCRIPTION</th>
-                  <th style={{ width: '85px', textAlign: 'center' }}>GST%</th>
-                  <th style={{ width: '95px', textAlign: 'right' }}>RATE</th>
-                  <th style={{ width: '80px', textAlign: 'center' }}>DISC%</th>
-                  <th style={{ width: '120px', textAlign: 'center' }}>QUANTITY</th>
-                  <th style={{ width: '105px', textAlign: 'right' }}>TOTAL</th>
-                  <th style={{ width: '45px', textAlign: 'center' }}></th>
+                  <th style={{ width: '32px', textAlign: 'center' }}>#</th>
+                  <th style={{ minWidth: '140px' }}>ITEM / DESCRIPTION</th>
+                  <th style={{ width: '58px', textAlign: 'center' }}>GST%</th>
+                  <th style={{ width: '76px', textAlign: 'right' }}>RATE</th>
+                  <th style={{ width: '60px', textAlign: 'center' }}>DISC%</th>
+                  <th style={{ width: '88px', textAlign: 'center' }}>QTY</th>
+                  <th style={{ width: '84px', textAlign: 'right' }}>TOTAL</th>
+                  <th style={{ width: '36px', textAlign: 'center' }}></th>
                 </tr>
               </thead>
               <tbody>
@@ -533,10 +654,30 @@ export default function PosPage() {
           </div>
         </div>
 
+        {/* Interactive Resizer Splitter Handle */}
+        {cartWidthPercent < 100 && (
+          <div 
+            className={`posbranch-resizer-handle ${isDragging ? 'is-dragging' : ''}`}
+            onMouseDown={handleMouseDownResizer}
+            title="Click & Drag to resize sections horizontally"
+          >
+            <div className="resizer-knob">
+              <GripVertical size={14} />
+            </div>
+          </div>
+        )}
+
         {/* Right Pane: Live Product Showcase & Category Ribbon */}
-        <div className="posbranch-products-pane">
-          {/* Header with Title & View Mode Toggle */}
-          <div className="products-pane-header">
+        {cartWidthPercent < 100 && (
+          <div 
+            className="posbranch-products-pane"
+            style={{
+              flex: 'none',
+              width: `calc(${100 - cartWidthPercent}% - 6px)`
+            }}
+          >
+            {/* Header with Title & View Mode Toggle */}
+            <div className="products-pane-header">
             <div className="products-pane-title-group">
               <ShoppingBag size={17} color="var(--accent-indigo)" />
               <span className="products-pane-heading">Product Catalog</span>
@@ -722,6 +863,7 @@ export default function PosPage() {
             )}
           </div>
         </div>
+      )}
       </div>
 
       {/* ─── BOTTOM DOCK / CHECKOUT ACTION BAR ─── */}
