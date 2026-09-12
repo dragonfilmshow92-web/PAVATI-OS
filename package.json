@@ -9,7 +9,8 @@
     "build": "npm --prefix frontend install && npm --prefix frontend run build",
     "desktop": "cmd /c launch-desktop-app.bat",
     "kiosk": "cmd /c launch-kiosk-app.bat",
-    "electron": "electron desktop/main.js"
+    "electron": "electron desktop/main.js",
+    "audit": "node server/comprehensive_audit.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

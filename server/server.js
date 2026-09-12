@@ -1,4 +1,4 @@
-﻿require('dotenv').config();
+require('dotenv').config();
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -59,13 +59,22 @@ const MIME_TYPES = {
   '.json': 'application/json',
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
   '.svg': 'image/svg+xml',
-  '.ico': 'image/x-icon'
+  '.ico': 'image/x-icon',
+  '.woff2': 'font/woff2',
+  '.woff': 'font/woff',
+  '.webmanifest': 'application/manifest+json'
 };
 
 const server = http.createServer(async (req, res) => {
-  const parsedUrl = url.parse(req.url, true);
-  const pathname = parsedUrl.pathname;
+  const reqUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+  const pathname = reqUrl.pathname;
+  const parsedUrl = {
+    pathname,
+    query: Object.fromEntries(reqUrl.searchParams.entries())
+  };
   const method = req.method;
 
   // Handle CORS preflight
@@ -599,7 +608,7 @@ const server = http.createServer(async (req, res) => {
         const timestamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
         res.writeHead(200, {
           'Content-Type': 'application/json',
-          'Content-Disposition': `attachment; filename="mct-pos-backup-${timestamp}.json"`,
+          'Content-Disposition': `attachment; filename="pavati-os-backup-${timestamp}.json"`,
           'Access-Control-Allow-Origin': '*'
         });
         return res.end(JSON.stringify(backupData, null, 2));
