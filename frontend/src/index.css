@@ -684,6 +684,31 @@ body {
   touch-action: manipulation;
 }
 
+/* ── Public Route Viewport Standards (Landing Page & Login) ── */
+body.public-route-active,
+html:has(body.public-route-active) {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  height: auto !important;
+  min-height: 100% !important;
+  user-select: auto !important;
+}
+
+body.public-route-active #root {
+  height: auto !important;
+  min-height: 100vh !important;
+  overflow: visible !important;
+}
+
+.public-viewport-container {
+  width: 100%;
+  min-height: 100vh;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  position: relative;
+  -webkit-overflow-scrolling: touch;
+}
+
 /* App Shell */
 .app-shell {
   display: flex;

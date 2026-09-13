@@ -43,6 +43,21 @@ function AppLayout() {
 
   const isPublicPage = currentPage === 'landing' || currentPage === 'login';
 
+  // Toggle document html and body class for public pages scrolling vs cashier terminal locking
+  useEffect(() => {
+    if (isPublicPage) {
+      document.documentElement.classList.add('public-route-active');
+      document.body.classList.add('public-route-active');
+    } else {
+      document.documentElement.classList.remove('public-route-active');
+      document.body.classList.remove('public-route-active');
+    }
+    return () => {
+      document.documentElement.classList.remove('public-route-active');
+      document.body.classList.remove('public-route-active');
+    };
+  }, [isPublicPage]);
+
   // Keyboard shortcut listener (F1 to F10, Ctrl+B for Sidebar toggle)
   useEffect(() => {
     if (isPublicPage) return; // Don't trigger POS shortcuts while on landing/login pages
@@ -117,10 +132,27 @@ function AppLayout() {
     </div>
   );
 
-  // If viewing public landing or login page, render full-screen without cashier app-shell
+  // If viewing public landing or login page, render full-screen with native scrolling enabled
   if (isPublicPage) {
     return (
-      <div className="public-viewport-container" style={{ position: 'relative', width: '100%', minHeight: '100vh', background: 'var(--bg-primary)' }}>
+      <div 
+        className="public-viewport-container" 
+        style={{ 
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: '100%', 
+          height: '100vh',
+          height: '100dvh',
+          overflowY: 'auto', 
+          overflowX: 'hidden', 
+          background: 'var(--bg-base, #060912)',
+          WebkitOverflowScrolling: 'touch',
+          zIndex: 1
+        }}
+      >
         <AmbientBackdrop />
         {currentPage === 'landing' ? <LandingPage /> : <LoginPage />}
         {toastContainer}
